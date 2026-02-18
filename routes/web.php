@@ -1,46 +1,35 @@
 <?php
 
-use App\Http\Controllers\AlarmController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\PersonelController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\SettingController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ForecastController;
+use App\Http\Controllers\HasilPeramalanController;
 use Illuminate\Support\Facades\Route;
 
 // Authentication Routes
-Route::middleware(['guest'])->group(function () {
+Route::middleware('guest')->group(function () {
     Route::get('/', [AuthController::class, 'showLogin'])->name('login');
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::get('/login', [AuthController::class, 'showLogin']);
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 });
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::middleware(['auth:personel'])->group(function () {
-    Route::get('/alert', [AlarmController::class, 'showAlert'])->name('alert.view');
-    Route::post('/alert/attend', [AlarmController::class, 'attend'])->name('alert.attend');
-    Route::post('/fcm/subscribe', [AlarmController::class, 'subscribe'])->name('fcm.subscribe');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-    // Settings Routes
-    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
-    Route::put('/settings/profile', [SettingController::class, 'updateProfile'])->name('settings.update-profile');
-    Route::put('/settings/password', [SettingController::class, 'updatePassword'])->name('settings.update-password');
+// Protected Routes
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::resource('users', UserController::class);
+    Route::resource('products', ProductController::class);
+    Route::resource('transactions', TransactionController::class);
+    Route::post('/forecasts/generate', [ForecastController::class, 'generate'])->name('forecasts.generate');
+    Route::resource('forecasts', ForecastController::class);
+
+    // Hasil Peramalan
+    Route::get('/hasil-peramalan', [HasilPeramalanController::class, 'index'])->name('hasil-peramalan.index');
+    Route::post('/hasil-peramalan/generate', [HasilPeramalanController::class, 'generate'])->name('hasil-peramalan.generate');
+    Route::delete('/hasil-peramalan/destroy-filter', [HasilPeramalanController::class, 'destroy'])->name('hasil-peramalan.destroy-filter');
 });
-
-Route::middleware(['auth:personel', 'role:komandan'])->group(function () {
-    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('api/dashboard/stats', [DashboardController::class, 'getStats'])->name('dashboard.stats');
-    Route::resource('personels', PersonelController::class);
-    Route::post('/alarm/trigger', [AlarmController::class, 'trigger'])->name('alarm.trigger');
-    Route::post('/alarm/stop', [AlarmController::class, 'stop'])->name('alarm.stop');
-    Route::get('/reports/attendance', [AlarmController::class, 'showAttendanceReport'])->name('reports.attendance');
-    Route::get('/api/reports/attendance/{alertId}', [AlarmController::class, 'getAttendanceReport'])->name('reports.get');
-    Route::get('/api/reports/alerts', [AlarmController::class, 'getAlertsForReport'])->name('reports.alerts');
-    Route::get('/reports/export/{alertId}', [AlarmController::class, 'exportAttendanceReport'])->name('reports.export');
-});
-
-Route::get('/test-sms', function() {
-    $sms = new \App\Services\SmsService();
-    $result = $sms->send('085790291176', 'SIAGA TK 1 - PERSIAPAN UPACARA');
-    return $result ? 'SMS sent!' : 'SMS failed!';
-})->middleware('auth:personel');

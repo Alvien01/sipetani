@@ -1,315 +1,432 @@
-@extends('layouts.dashboard')
-@section('title', 'Dashboard Siaga')
+@extends('layouts.app')
+
+@section('title', 'Dashboard')
+@section('page-title', 'Dashboard')
+@section('page-subtitle', 'Ringkasan data & analisis SiPetani')
+
 @section('content')
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <!-- Card 1 -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center space-x-4">
-            <div class="p-3 bg-indigo-50 rounded-xl text-indigo-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-                    <path
-                        d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+<div class="space-y-6">
+
+    {{-- ===== STAT CARDS ===== --}}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+        {{-- Total Users --}}
+        <a href="{{ route('users.index') }}"
+            class="group bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md hover:border-green-200 transition-all duration-200">
+            <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center group-hover:bg-green-200 transition-colors flex-shrink-0">
+                <svg class="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                 </svg>
             </div>
-            <div>
-                <p class="text-2xl font-bold text-slate-900" data-stat="total">{{ $totalPersonel }}</p>
-                <p class="text-sm font-medium text-slate-500">Total Personel</p>
+            <div class="min-w-0">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Total Users</p>
+                <p class="text-2xl font-bold text-gray-800 mt-0.5">{{ number_format($totalUsers) }}</p>
+                <p class="text-xs text-green-600 mt-0.5 font-medium">pengguna aktif</p>
+            </div>
+        </a>
+
+        {{-- Total Produk --}}
+        <a href="{{ route('products.index') }}"
+            class="group bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md hover:border-emerald-200 transition-all duration-200">
+            <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center group-hover:bg-emerald-200 transition-colors flex-shrink-0">
+                <svg class="w-6 h-6 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Total Produk</p>
+                <p class="text-2xl font-bold text-gray-800 mt-0.5">{{ number_format($totalProducts) }}</p>
+                <p class="text-xs text-emerald-600 mt-0.5 font-medium">jenis produk</p>
+            </div>
+        </a>
+
+        {{-- Total Transaksi --}}
+        <a href="{{ route('transactions.index') }}"
+            class="group bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md hover:border-blue-200 transition-all duration-200">
+            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center group-hover:bg-blue-200 transition-colors flex-shrink-0">
+                <svg class="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Total Transaksi</p>
+                <p class="text-2xl font-bold text-gray-800 mt-0.5">{{ number_format($totalTransactions) }}</p>
+                <div class="flex items-center gap-1 mt-0.5">
+                    @if($trxGrowth >= 0)
+                        <svg class="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
+                        </svg>
+                        <span class="text-xs text-green-600 font-medium">+{{ $trxGrowth }}% bulan ini</span>
+                    @else
+                        <svg class="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                        <span class="text-xs text-red-500 font-medium">{{ $trxGrowth }}% bulan ini</span>
+                    @endif
+                </div>
+            </div>
+        </a>
+
+        {{-- Total Omzet --}}
+        <div class="bg-gradient-to-br from-green-700 to-emerald-800 rounded-2xl shadow-sm p-5 flex items-center gap-4">
+            <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs font-semibold text-green-200 uppercase tracking-wide">Total Omzet</p>
+                <p class="text-xl font-bold text-white mt-0.5 truncate">
+                    Rp {{ number_format($totalOmzet, 0, ',', '.') }}
+                </p>
+                <p class="text-xs text-green-300 mt-0.5">
+                    Bulan ini: Rp {{ number_format($omzetBulanIni, 0, ',', '.') }}
+                </p>
             </div>
         </div>
 
-        <!-- Card 2 -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center space-x-4">
-            <div class="p-3 bg-orange-50 rounded-xl text-orange-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"
-                        clip-rule="evenodd" />
-                </svg>
-            </div>
+    </div>
+
+    {{-- ===== GRAFIK TRANSAKSI PER BULAN ===== --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
             <div>
-                <p class="text-2xl font-bold text-slate-900" data-stat="siaga">{{ $dalamSiaga }}</p>
-                <p class="text-sm font-medium text-slate-500">Dalam Siaga</p>
+                <h3 class="text-base font-semibold text-gray-800">Grafik Transaksi Bulanan</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Jumlah transaksi & omzet 12 bulan terakhir</p>
+            </div>
+            {{-- Toggle chart type --}}
+            <div class="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+                <button id="btnTrx" onclick="switchChart('trx')"
+                    class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white text-green-700 shadow-sm transition-all">
+                    Transaksi
+                </button>
+                <button id="btnOmzet" onclick="switchChart('omzet')"
+                    class="px-3 py-1.5 text-xs font-semibold rounded-lg text-gray-500 hover:text-gray-700 transition-all">
+                    Omzet
+                </button>
+                <button id="btnQty" onclick="switchChart('qty')"
+                    class="px-3 py-1.5 text-xs font-semibold rounded-lg text-gray-500 hover:text-gray-700 transition-all">
+                    Qty Terjual
+                </button>
             </div>
         </div>
-
-        <!-- Card 3 -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center space-x-4">
-            <div class="p-3 bg-green-50 rounded-xl text-green-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clip-rule="evenodd" />
-                </svg>
-            </div>
-            <div>
-                <p class="text-2xl font-bold text-slate-900" data-stat="terkonfirmasi">{{ $terkonfirmasi }}</p>
-                <p class="text-sm font-medium text-slate-500">Terkonfirmasi</p>
-            </div>
-        </div>
-
-        <!-- Card 4 -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center space-x-4">
-            <div class="p-3 bg-amber-50 rounded-xl text-amber-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                </svg>
-            </div>
-            <div>
-                <p class="text-2xl font-bold text-slate-900" data-stat="tersedia">{{ $tersedia }}</p>
-                <p class="text-sm font-medium text-slate-500">Personel Tersedia</p>
+        <div class="p-6">
+            <div class="relative" style="height: 280px;">
+                <canvas id="trxChart"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- Alert / Status Section -->
-    @if (session('success'))
-        <div class="mb-4 p-4 bg-green-100 text-green-700 rounded-lg">
-            {{ session('success') }}
-        </div>
-    @endif
-    @if (session('error'))
-        <div class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
-            {{ session('error') }}
-        </div>
-    @endif
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
-        <div class="bg-gradient-to-br from-green-700 to-green-800 rounded-2xl p-6 text-white shadow-lg">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h3 class="text-lg font-semibold">Status Siaga</h3>
-                    <p class="text-green-100 text-sm mt-1">Sistem Peringatan Dini</p>
-                </div>
-                <div class="bg-white/20 p-3 rounded-xl">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-                        <path
-                            d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-                    </svg>
-                </div>
-            </div>
+    {{-- ===== ROW: TOP PRODUK + TRANSAKSI TERBARU ===== --}}
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-            @if ($activeAlert)
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-4">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <p class="font-bold text-lg">{{ $activeAlert->title }}</p>
-                            <p class="text-green-100 text-sm mt-1">{{ $activeAlert->message }}</p>
-                            @if ($activeAlert->level)
-                                <span
-                                    class="inline-block mt-2 px-3 py-1 bg-white/20 rounded-full text-xs font-semibold">SIAGA TK {{ $activeAlert->level }}</span>
-                            @endif
-                            <p class="text-green-100 text-xs mt-2">Dimulai:
-                                {{ $activeAlert->started_at->format('d M Y, H:i') }}</p>
+        {{-- Top 5 Produk (Donut + List) --}}
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-100">
+                <h3 class="text-base font-semibold text-gray-800">Top 5 Produk</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Berdasarkan jumlah transaksi</p>
+            </div>
+            <div class="p-5">
+                {{-- Donut chart --}}
+                <div class="relative mx-auto" style="height: 180px; max-width: 180px;">
+                    <canvas id="donutChart"></canvas>
+                </div>
+                {{-- List --}}
+                <div class="mt-4 space-y-2.5">
+                    @php
+                        $donutColors = ['#16a34a','#3b82f6','#f97316','#8b5cf6','#ec4899'];
+                        $maxTrx = $topProducts->max('total_trx') ?: 1;
+                    @endphp
+                    @forelse($topProducts as $i => $tp)
+                    <div class="flex items-center gap-3">
+                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                            style="background:{{ $donutColors[$i] ?? '#9ca3af' }}"></span>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-1">
+                                <p class="text-xs font-medium text-gray-700 truncate">
+                                    {{ $tp->product?->product_name ?? 'Produk #'.$tp->product_id }}
+                                </p>
+                                <span class="text-xs font-semibold text-gray-600 ml-2 flex-shrink-0">
+                                    {{ number_format($tp->total_trx) }}x
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-1">
+                                <div class="h-1 rounded-full transition-all duration-500"
+                                    style="width: {{ ($tp->total_trx / $maxTrx) * 100 }}%; background: {{ $donutColors[$i] ?? '#9ca3af' }}">
+                                </div>
+                            </div>
                         </div>
-                        <span class="flex h-3 w-3">
-                            <span class="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-white opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-                        </span>
                     </div>
+                    @empty
+                    <p class="text-xs text-gray-400 text-center py-4">Belum ada data transaksi</p>
+                    @endforelse
                 </div>
-                <form action="{{ route('alarm.stop') }}" method="POST">
-                    @csrf
-                    <button type="submit"
-                        class="cursor-pointer w-full bg-white text-green-700 font-semibold py-3 rounded-xl hover:bg-green-50 transition-all shadow-md">
-                        Tutup Siaga
-                    </button>
-                </form>
-            @else
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-4">
-                    <p class="text-center text-green-100">Tidak ada siaga aktif</p>
-                </div>
-                <button type="button" onclick="openAlarmModal()"
-                    class="cursor-pointer w-full bg-white text-green-700 font-semibold py-3 rounded-xl hover:bg-green-50 transition-all shadow-md">
-                    Kirim Alarm
-                </button>
-            @endif
-        </div>
-
-        @if ($activeAlert)
-            <div class="w-full bg-slate-100 rounded-full h-2.5 mb-2 mt-6">
-                @php
-                    $percentage = $totalPersonelnoKomandan > 0 ? ($terkonfirmasi / $totalPersonelnoKomandan) * 100 : 0;
-                @endphp
-                <div class="bg-rose-500 h-2.5 rounded-full transition-all duration-500"
-                    style="width: {{ $percentage }}%"></div>
-            </div>
-            <p class="text-sm text-slate-500 font-medium progress-text">{{ $terkonfirmasi }}/{{ $totalPersonelnoKomandan }} Personel Terkonfirmasi
-                ({{ round($percentage) }}%)</p>
-        @endif
-    </div>
-
-    <!-- Bottom Section: Table & Map -->
-    <div class="grid grid-cols-1 lg:grid-cols-1 gap-8">
-        <!-- Table Section -->
-        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-indigo-50/50">
-                        <tr>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Nama</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Pangkat</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">NRP</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Jabatan</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @forelse($personels as $personel)
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4 text-sm font-medium text-slate-900">{{ $personel->name }}</td>
-                                <td class="px-6 py-4 text-sm text-slate-600">{{ $personel->rank }}</td>
-                                <td class="px-6 py-4 text-sm text-slate-600">{{ $personel->nrp }}</td>
-                                <td class="px-6 py-4 text-sm text-slate-600">{{ $personel->position }}</td>
-                                <td class="px-6 py-4">
-                                    <span
-                                        class="px-3 py-1 text-xs font-bold rounded-full
-                                    {{ $personel->status === 'Terkonfirmasi'
-                                        ? 'text-emerald-600 bg-emerald-100'
-                                        : ($personel->status === 'Siaga'
-                                            ? 'text-orange-600 bg-orange-100'
-                                            : 'text-blue-600 bg-blue-100') }}">
-                                        {{ $personel->status }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="px-6 py-8 text-center text-slate-500">
-                                    Belum ada data personel.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
             </div>
         </div>
-    </div>
 
-    <!-- Alarm Modal -->
-    <div id="alarmModal"
-        class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xl font-bold text-slate-800">Kirim Alarm Siaga</h3>
-                <button onclick="closeAlarmModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        {{-- Transaksi Terbaru --}}
+        <div class="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                <div>
+                    <h3 class="text-base font-semibold text-gray-800">Transaksi Terbaru</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">8 transaksi paling baru</p>
+                </div>
+                <a href="{{ route('transactions.index') }}"
+                    class="text-xs text-green-700 font-semibold hover:underline flex items-center gap-1">
+                    Lihat Semua
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                     </svg>
-                </button>
+                </a>
             </div>
-
-            <form action="{{ route('alarm.trigger') }}" method="POST">
-                @csrf
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">Tingkat Kesiagaan</label>
-                        <select name="level" required
-                            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
-                            <option value="">Pilih Tingkat Siaga</option>
-                            <option value="I">SIAGA TK I</option>
-                            <option value="II">SIAGA TK II</option>
-                            <option value="III">SIAGA TK III</option>
-                        </select>
+            <div class="divide-y divide-gray-50">
+                @forelse($recentTransactions as $trx)
+                <div class="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50/60 transition-colors">
+                    <div class="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                        </svg>
                     </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">Judul Alarm</label>
-                        <input type="text" name="title" required placeholder="Contoh: Panggilan Luar Biasa"
-                            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-800 truncate">
+                            {{ $trx->product?->product_name ?? 'Produk #'.$trx->product_id }}
+                        </p>
+                        <p class="text-xs text-gray-400 mt-0.5">
+                            {{ \Carbon\Carbon::parse($trx->date_sale)->translatedFormat('d M Y') }}
+                            &nbsp;·&nbsp; {{ number_format($trx->total_buy) }} unit
+                        </p>
                     </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">Pesan</label>
-                        <textarea name="message" required rows="4" placeholder="Masukkan pesan alarm..."
-                            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent resize-none"></textarea>
-                    </div>
-
-                    <div class="flex gap-3 pt-2">
-                        <button type="button" onclick="closeAlarmModal()"
-                            class="cursor-pointer flex-1 px-4 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-colors">
-                            Batal
-                        </button>
-                        <button type="submit"
-                            class="cursor-pointer flex-1 px-4 py-3 bg-gradient-to-r from-green-700 to-green-800 text-white font-semibold rounded-xl hover:from-green-800 hover:to-green-900 transition-all shadow-lg">
-                            Kirim Alarm
-                        </button>
+                    <div class="text-right flex-shrink-0">
+                        <p class="text-sm font-semibold text-gray-800">
+                            Rp {{ number_format($trx->total_payment, 0, ',', '.') }}
+                        </p>
                     </div>
                 </div>
-            </form>
+                @empty
+                <div class="px-6 py-12 text-center">
+                    <p class="text-sm text-gray-400">Belum ada transaksi</p>
+                </div>
+                @endforelse
+            </div>
+        </div>
+
+    </div>
+
+    {{-- ===== QUICK ACTIONS ===== --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-5">
+        <h3 class="text-sm font-semibold text-gray-700 mb-3">⚡ Aksi Cepat</h3>
+        <div class="flex flex-wrap gap-3">
+            <a href="{{ route('users.create') }}"
+                class="inline-flex items-center gap-2 px-4 py-2.5 bg-green-700 hover:bg-green-800 text-white text-sm font-medium rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Tambah User
+            </a>
+            <a href="{{ route('products.create') }}"
+                class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Tambah Produk
+            </a>
+            <a href="{{ route('transactions.create') }}"
+                class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Tambah Transaksi
+            </a>
+            <a href="{{ route('forecasts.index') }}"
+                class="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+                </svg>
+                Peramalan
+            </a>
+            <a href="{{ route('hasil-peramalan.index') }}"
+                class="inline-flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Hasil Analisis
+            </a>
         </div>
     </div>
 
-    <script>
-        function openAlarmModal() {
-            document.getElementById('alarmModal').classList.remove('hidden');
+</div>
+@endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const labels  = @json($chartLabels);
+    const dataTrx   = @json($chartTrx);
+    const dataOmzet = @json($chartOmzet);
+    const dataQty   = @json($chartQty);
+
+    // ── Grafik Transaksi Bulanan (Bar + Line) ──────────────────────
+    const trxCtx = document.getElementById('trxChart');
+    let trxChart;
+
+    function buildTrxChart(mode) {
+        if (trxChart) trxChart.destroy();
+
+        let dataset, label, color, yLabel;
+        if (mode === 'omzet') {
+            dataset = dataOmzet;
+            label   = 'Omzet (Rp)';
+            color   = '#3b82f6';
+            yLabel  = 'Rp';
+        } else if (mode === 'qty') {
+            dataset = dataQty;
+            label   = 'Qty Terjual';
+            color   = '#f97316';
+            yLabel  = 'unit';
+        } else {
+            dataset = dataTrx;
+            label   = 'Jumlah Transaksi';
+            color   = '#16a34a';
+            yLabel  = 'trx';
         }
 
-        function closeAlarmModal() {
-            document.getElementById('alarmModal').classList.add('hidden');
-        }
-
-        document.getElementById('alarmModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeAlarmModal();
+        trxChart = new Chart(trxCtx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label,
+                        data: dataset,
+                        backgroundColor: color + '22',
+                        borderColor: color,
+                        borderWidth: 2,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        order: 2,
+                    },
+                    {
+                        label: label + ' (tren)',
+                        data: dataset,
+                        type: 'line',
+                        borderColor: color,
+                        backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: color,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        tension: 0.4,
+                        order: 1,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(17,24,39,0.92)',
+                        titleColor: '#f9fafb',
+                        bodyColor: '#d1d5db',
+                        padding: 12,
+                        callbacks: {
+                            label: ctx => {
+                                const v = ctx.parsed.y;
+                                if (mode === 'omzet') return ' Rp ' + Number(v).toLocaleString('id-ID');
+                                return ' ' + Number(v).toLocaleString('id-ID') + ' ' + yLabel;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 }, color: '#9ca3af' },
+                    },
+                    y: {
+                        grid: { color: 'rgba(0,0,0,0.04)' },
+                        ticks: {
+                            font: { size: 11 },
+                            color: '#9ca3af',
+                            callback: v => mode === 'omzet'
+                                ? 'Rp ' + Number(v).toLocaleString('id-ID')
+                                : Number(v).toLocaleString('id-ID')
+                        },
+                        beginAtZero: true,
+                    }
+                }
             }
         });
+    }
 
-        function updateDashboardStats() {
-            fetch('{{ route('dashboard.stats') }}')
-                .then(response => response.json())
-                .then(data => {
-                    document.querySelector('[data-stat="total"]').textContent = data.totalPersonel;
-                    document.querySelector('[data-stat="siaga"]').textContent = data.dalamSiaga;
-                    document.querySelector('[data-stat="terkonfirmasi"]').textContent = data.terkonfirmasi;
-                    document.querySelector('[data-stat="tersedia"]').textContent = data.tersedia;
+    buildTrxChart('trx');
 
-                    const progressBar = document.querySelector('.bg-rose-500');
-                    const progressText = document.querySelector('.text-sm.text-slate-500.font-medium.progress-text');
-
-                    if (progressBar && progressText && data.totalPersonelnoKomandan > 0) {
-                        const percentage = (data.terkonfirmasi / data.totalPersonelnoKomandan) * 100;
-                        progressBar.style.width = percentage + '%';
-                        progressText.textContent = `${data.terkonfirmasi}/${data.totalPersonelnoKomandan} Personel Terkonfirmasi (${Math.round(percentage)}%)`;
-                    }
-
-                    const tbody = document.querySelector('tbody.divide-y');
-                    if (tbody && data.personels && data.personels.length > 0) {
-                        tbody.innerHTML = data.personels.map(personel => {
-                            const statusClass = personel.status === 'Terkonfirmasi'
-                                ? 'text-emerald-600 bg-emerald-100'
-                                : personel.status === 'Siaga'
-                                ? 'text-orange-600 bg-orange-100'
-                                : 'text-blue-600 bg-blue-100';
-
-                            return `
-                                <tr class="hover:bg-slate-50 transition-colors">
-                                    <td class="px-6 py-4 text-sm font-medium text-slate-900">${personel.name}</td>
-                                    <td class="px-6 py-4 text-sm text-slate-600">${personel.rank}</td>
-                                    <td class="px-6 py-4 text-sm text-slate-600">${personel.nrp}</td>
-                                    <td class="px-6 py-4 text-sm text-slate-600">${personel.position}</td>
-                                    <td class="px-6 py-4">
-                                        <span class="px-3 py-1 text-xs font-bold rounded-full ${statusClass}">
-                                            ${personel.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            `;
-                        }).join('');
-                    }
-
-                    console.log('Dashboard updated:', data);
-                })
-                .catch(error => console.error('Error updating stats:', error));
-        }
-
-        setInterval(updateDashboardStats, 10000);
-
-        // Listen for real-time updates from Firebase
-        window.addEventListener('siaga-notification', (event) => {
-            console.log('Real-time alert received, updating stats...', event.detail);
-            updateDashboardStats();
-             if (event.detail.notification) {
-             }
+    window.switchChart = function(mode) {
+        buildTrxChart(mode);
+        ['trx','omzet','qty'].forEach(m => {
+            const btn = document.getElementById('btn' + m.charAt(0).toUpperCase() + m.slice(1));
+            if (btn) {
+                if (m === mode) {
+                    btn.classList.add('bg-white','text-green-700','shadow-sm');
+                    btn.classList.remove('text-gray-500');
+                } else {
+                    btn.classList.remove('bg-white','text-green-700','shadow-sm');
+                    btn.classList.add('text-gray-500');
+                }
+            }
         });
-    </script>
-@endsection
+    };
+
+    // ── Donut Chart Top Produk ─────────────────────────────────────
+    const donutCtx = document.getElementById('donutChart');
+    @if($topProducts->isNotEmpty())
+    const donutLabels = @json($topProducts->map(fn($t) => $t->product?->product_name ?? 'Produk #'.$t->product_id)->values());
+    const donutData   = @json($topProducts->pluck('total_trx')->values());
+    const donutColors = ['#16a34a','#3b82f6','#f97316','#8b5cf6','#ec4899'];
+
+    new Chart(donutCtx, {
+        type: 'doughnut',
+        data: {
+            labels: donutLabels,
+            datasets: [{
+                data: donutData,
+                backgroundColor: donutColors,
+                borderWidth: 3,
+                borderColor: '#fff',
+                hoverOffset: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(17,24,39,0.92)',
+                    titleColor: '#f9fafb',
+                    bodyColor: '#d1d5db',
+                    padding: 10,
+                    callbacks: {
+                        label: ctx => ' ' + Number(ctx.parsed).toLocaleString('id-ID') + ' transaksi'
+                    }
+                }
+            }
+        }
+    });
+    @endif
+
+});
+</script>
+@endpush

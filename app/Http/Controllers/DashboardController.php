@@ -2,89 +2,107 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Personel;
-use App\Models\SiagaAlert;
+use App\Models\Product;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Models\Forecast;
+use App\Models\HasilPeramalan;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // Update user's last active timestamp
-        if (auth()->check()) {
-            $user = Personel::find(auth()->id());
-            if ($user) {
-                $user->update(['last_online_at' => now()]);
-            }
+        // ── Stat Cards ──────────────────────────────────────────────
+        $totalUsers        = User::count();
+        $totalProducts     = Product::count();
+        $totalTransactions = Transaction::count();
+        $totalOmzet        = Transaction::sum('total_payment');
+        $totalForecast     = Forecast::distinct('product_id')->count('product_id');
+
+        // Transaksi bulan ini vs bulan lalu
+        $trxBulanIni   = Transaction::whereMonth('date_sale', now()->month)
+                            ->whereYear('date_sale', now()->year)->count();
+        $trxBulanLalu  = Transaction::whereMonth('date_sale', now()->subMonth()->month)
+                            ->whereYear('date_sale', now()->subMonth()->year)->count();
+        $trxGrowth     = $trxBulanLalu > 0
+                            ? round((($trxBulanIni - $trxBulanLalu) / $trxBulanLalu) * 100, 1)
+                            : ($trxBulanIni > 0 ? 100 : 0);
+
+        // Omzet bulan ini
+        $omzetBulanIni = Transaction::whereMonth('date_sale', now()->month)
+                            ->whereYear('date_sale', now()->year)->sum('total_payment');
+
+        // ── Grafik: Transaksi per Bulan (12 bulan terakhir) ─────────
+        $monthlyData = Transaction::select(
+                DB::raw('YEAR(date_sale) as year'),
+                DB::raw('MONTH(date_sale) as month'),
+                DB::raw('COUNT(*) as total_trx'),
+                DB::raw('SUM(total_buy) as total_qty'),
+                DB::raw('SUM(total_payment) as total_omzet')
+            )
+            ->where('date_sale', '>=', now()->subMonths(11)->startOfMonth())
+            ->groupBy('year', 'month')
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+
+        // Isi bulan yang kosong agar grafik lengkap 12 titik
+        $chartLabels  = [];
+        $chartTrx     = [];
+        $chartOmzet   = [];
+        $chartQty     = [];
+
+        for ($i = 11; $i >= 0; $i--) {
+            $date  = now()->subMonths($i);
+            $y     = (int) $date->format('Y');
+            $m     = (int) $date->format('n');
+            $label = $date->translatedFormat('M Y');
+
+            $row = $monthlyData->first(fn($r) => (int)$r->year === $y && (int)$r->month === $m);
+
+            $chartLabels[] = $label;
+            $chartTrx[]    = $row ? (int) $row->total_trx   : 0;
+            $chartOmzet[]  = $row ? (float) $row->total_omzet : 0;
+            $chartQty[]    = $row ? (int) $row->total_qty    : 0;
         }
 
-        $totalPersonel = Personel::count();
+        // ── Grafik: Top 5 Produk by Transaksi ───────────────────────
+        $topProducts = Transaction::select(
+                'product_id',
+                DB::raw('COUNT(*) as total_trx'),
+                DB::raw('SUM(total_buy) as total_qty'),
+                DB::raw('SUM(total_payment) as total_omzet')
+            )
+            ->with('product:id,product_name')
+            ->groupBy('product_id')
+            ->orderByDesc('total_trx')
+            ->limit(5)
+            ->get();
 
-        $totalPersonelnoKomandan = Personel::whereHas('role', function ($q) {
-            $q->where('name', '!=', 'komandan');
-        })->count();
-        $dalamSiaga = Personel::whereHas('role', function ($q) {
-            $q->where('name', '!=', 'komandan');
-        })->where('status', 'Siaga')->count();
-        $terkonfirmasi = Personel::whereHas('role', function ($q) {
-            $q->where('name', '!=', 'komandan');
-        })->where('status', 'Terkonfirmasi')->count();
-        $tersedia = Personel::whereHas('role', function ($q) {
-            $q->where('name', '!=', 'komandan');
-        })->where('status', 'Tersedia')->count();
+        // ── Transaksi Terbaru ────────────────────────────────────────
+        $recentTransactions = Transaction::with('product:id,product_name')
+            ->latest('date_sale')
+            ->limit(8)
+            ->get();
 
-        $activeAlert = SiagaAlert::where('status', 'active')->first();
-
-        $personels = Personel::latest()->take(10)->get();
-
-        return view('dashboard', compact('totalPersonel', 'dalamSiaga', 'terkonfirmasi', 'tersedia', 'activeAlert', 'personels', 'totalPersonelnoKomandan'));
-    }
-
-    public function getStats()
-    {
-        // Update user's last active timestamp
-        if (auth()->check()) {
-            $user = Personel::find(auth()->id());
-            if ($user) {
-                $user->update(['last_online_at' => now()]);
-            }
-        }
-
-        $totalPersonel = Personel::count();
-
-        $totalPersonelnoKomandan = Personel::whereHas('role', function ($q) {
-            $q->where('name', '!=', 'komandan');
-        })->count();
-        $dalamSiaga = Personel::whereHas('role', function ($q) {
-            $q->where('name', '!=', 'komandan');
-        })->where('status', 'Siaga')->count();
-        $terkonfirmasi = Personel::whereHas('role', function ($q) {
-            $q->where('name', '!=', 'komandan');
-        })->where('status', 'Terkonfirmasi')->count();
-        $tersedia = Personel::whereHas('role', function ($q) {
-            $q->where('name', '!=', 'komandan');
-        })->where('status', 'Tersedia')->count();
-
-        $activeAlert = SiagaAlert::where('status', 'active')->first();
-
-        $personels = Personel::latest()->take(10)->get();
-
-        return response()->json([
-            'totalPersonel' => $totalPersonel,
-            'totalPersonelnoKomandan' => $totalPersonelnoKomandan,
-            'dalamSiaga' => $dalamSiaga,
-            'terkonfirmasi' => $terkonfirmasi,
-            'tersedia' => $tersedia,
-            'activeAlert' => $activeAlert,
-            'personels' => $personels->map(function ($p) {
-                return [
-                    'id' => $p->id,
-                    'name' => $p->name,
-                    'rank' => $p->rank,
-                    'position' => $p->position,
-                    'status' => $p->status,
-                    'nrp' => $p->nrp,
-                ];
-            }),
-        ]);
+        return view('dashboard', compact(
+            'totalUsers',
+            'totalProducts',
+            'totalTransactions',
+            'totalOmzet',
+            'totalForecast',
+            'trxBulanIni',
+            'trxBulanLalu',
+            'trxGrowth',
+            'omzetBulanIni',
+            'chartLabels',
+            'chartTrx',
+            'chartOmzet',
+            'chartQty',
+            'topProducts',
+            'recentTransactions',
+        ));
     }
 }

@@ -11,7 +11,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-gradient-to-br from-green-700 via-green-800 to-green-950 flex items-center justify-center p-4 font-sans">
+<body class="min-h-screen bg-gradient-to-br from-white-700 via-green-800 to-green-950 flex items-center justify-center p-4 font-sans">
     <div class="w-full max-w-md">
         <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
             <div class="bg-gradient-to-r from-green-700 to-green-800 px-8 py-8 text-center">

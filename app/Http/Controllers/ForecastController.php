@@ -29,8 +29,6 @@ class ForecastController extends Controller
         $productId = $request->product_id;
         $alpha = $request->alpha;
         $type = $request->type;
-
-        // Fetch transactions
         $query = Transaction::where('product_id', $productId)->orderBy('date_sale', 'asc');
         $transactions = $query->get();
 
@@ -38,7 +36,6 @@ class ForecastController extends Controller
             return back()->with('error', 'Tidak ada data transaksi untuk produk ini.');
         }
 
-        // Aggregate Data
         $data = [];
         foreach ($transactions as $trx) {
             $date = Carbon::parse($trx->date_sale);
@@ -47,9 +44,9 @@ class ForecastController extends Controller
                 $key = $date->format('Y-m');
                 $label = $date->format('F Y');
                 $year = $date->year;
-                $period = $date->month; // Month number
+                $period = $date->month;
             } else {
-                $key = $date->format('o-W'); // ISO Year-Week
+                $key = $date->format('o-W');
                 $label = 'Week ' . $date->weekOfYear . ' ' . $date->year;
                 $year = $date->year;
                 $period = $date->weekOfYear;
@@ -60,19 +57,18 @@ class ForecastController extends Controller
                     'total' => 0,
                     'year' => $year,
                     'period' => $period,
-                    'transaction_ids' => [] // track IDs if needed, though user schema has single ID. We'll pick one or null.
+                    'transaction_ids' => []
                 ];
             }
             $data[$key]['total'] += $trx->total_buy;
             $data[$key]['transaction_ids'][] = $trx->id;
         }
 
-        // Sort by key (date)
         ksort($data);
-        $s1_prev = null; // S'
-        $s2_prev = null; // S''
-        $a_prev = null;  // Level
-        $b_prev = null;  // Trend
+        $s1_prev = null;
+        $s2_prev = null;
+        $a_prev = null;
+        $b_prev = null;
         $forecast_val = null;
         Forecast::where('product_id', $productId)->where('type', $type)->delete();
         $iteration = 0;
@@ -88,20 +84,14 @@ class ForecastController extends Controller
                 $forecast_current = $current_actual; 
             } else {
                 $s1 = ($alpha * $current_actual) + ((1 - $alpha) * $s1_prev);
-                // S''_t = alpha * S'_t + (1-alpha) * S''_{t-1}
                 $s2 = ($alpha * $s1) + ((1 - $alpha) * $s2_prev);
-                // at = 2*S'_t - S''_t
                 $at = (2 * $s1) - $s2;
-                // bt = (alpha / (1-alpha)) * (S'_t - S''_t)
                 $bt = ($alpha / (1 - $alpha)) * ($s1 - $s2);
                 $forecast_current = $a_prev + $b_prev;
             }
 
-            // Error metrics
             $error = $current_actual - $forecast_current;
             $pe = $current_actual != 0 ? abs($error / $current_actual) * 100 : 0;
-            
-            // Evaluation text
             $eval = '';
             if ($pe < 10) $eval = 'Sangat Baik';
             elseif ($pe < 20) $eval = 'Baik';
@@ -128,7 +118,6 @@ class ForecastController extends Controller
                 'alpha'          => $alpha,
             ]);
 
-            // Prepare for next iteration
             $s1_prev = $s1;
             $s2_prev = $s2;
             $a_prev = $at;

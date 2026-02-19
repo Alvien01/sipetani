@@ -12,13 +12,34 @@
             <h3 class="text-base font-semibold text-gray-800">Daftar Transaksi</h3>
             <p class="text-sm text-gray-500 mt-0.5">Total {{ $transactions->total() }} transaksi</p>
         </div>
-        <a href="{{ route('transactions.create') }}"
-           class="flex items-center gap-2 px-4 py-2.5 bg-green-700 hover:bg-green-800 text-white text-sm font-medium rounded-xl transition-colors shadow-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Tambah Transaksi
-        </a>
+        <div class="flex items-center gap-3">
+            {{-- Export Button --}}
+            <a href="{{ route('transactions.export.csv') }}" target="_blank"
+               class="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 text-sm font-medium rounded-xl transition-colors shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Export
+            </a>
+
+            {{-- Import Button --}}
+            <button onclick="document.getElementById('importModal').classList.remove('hidden')"
+               class="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 text-sm font-medium rounded-xl transition-colors shadow-sm cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                Import
+            </button>
+
+            {{-- Create Button --}}
+            <a href="{{ route('transactions.create') }}"
+               class="flex items-center gap-2 px-4 py-2.5 bg-green-700 hover:bg-green-800 text-white text-sm font-medium rounded-xl transition-colors shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Tambah
+            </a>
+        </div>
     </div>
 
     <!-- Table -->
@@ -86,5 +107,64 @@
         {{ $transactions->links() }}
     </div>
     @endif
+</div>
+
+{{-- Modal Import --}}
+<div id="importModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-lg font-bold text-gray-900">Import Transaksi</h3>
+                <button onclick="document.getElementById('importModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <form action="{{ route('transactions.import.csv') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="space-y-4">
+                    {{-- File Input --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Pilih File CSV/Excel</label>
+                        <input type="file" name="file" required accept=".csv,.txt"
+                            class="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2.5 file:px-4
+                            file:rounded-xl file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-green-50 file:text-green-700
+                            hover:file:bg-green-100
+                            transition-all cursor-pointer border border-gray-200 rounded-xl">
+                        <p class="text-xs text-gray-400 mt-2">Mendukung format .csv</p>
+                    </div>
+
+                    {{-- Download Template --}}
+                    <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center gap-3">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">Belum punya format?</p>
+                            <a href="{{ route('transactions.template.csv') }}" class="text-xs text-blue-600 hover:text-blue-800 hover:underline">Download Template CSV</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex gap-3">
+                    <button type="button" onclick="document.getElementById('importModal').classList.add('hidden')"
+                        class="flex-1 px-4 py-2.5 bg-gray-50 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-100 transition-colors">
+                        Batal
+                    </button>
+                    <button type="submit"
+                        class="flex-1 px-4 py-2.5 bg-green-700 text-white text-sm font-medium rounded-xl hover:bg-green-800 transition-colors shadow-sm">
+                        Upload & Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 @endsection

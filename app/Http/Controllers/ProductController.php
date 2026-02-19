@@ -81,7 +81,6 @@ class ProductController extends Controller
             'stock'        => $request->stock,
         ];
 
-        // Update slug if product name changed
         if ($product->product_name !== $request->product_name) {
             $slug = Str::slug($request->product_name);
             $originalSlug = $slug;
@@ -105,8 +104,141 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         $product->delete();
-
         return redirect()->route('products.index')
             ->with('success', 'Produk berhasil dihapus.');
+    }
+
+    // ─── EXPORT CSV ──────────────────────────────────────────────────
+    public function exportCsv()
+    {
+        $products = Product::orderBy('id')->get();
+
+        $filename = 'produk_' . now()->format('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires'             => '0',
+        ];
+
+        $callback = function () use ($products) {
+            $handle = fopen('php://output', 'w');
+
+            // BOM untuk Excel agar UTF-8 terbaca
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // Header row
+            fputcsv($handle, ['id', 'product_name', 'slug', 'price', 'description', 'stock']);
+
+            foreach ($products as $p) {
+                fputcsv($handle, [
+                    $p->id,
+                    $p->product_name,
+                    $p->slug,
+                    $p->price,
+                    $p->description,
+                    $p->stock,
+                ]);
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    // ─── IMPORT CSV ──────────────────────────────────────────────────
+    public function importCsv(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt|max:5120',
+        ]);
+
+        $file   = $request->file('file');
+        $handle = fopen($file->getRealPath(), 'r');
+
+        // Hapus BOM jika ada
+        $bom = fread($handle, 3);
+        if ($bom !== chr(0xEF) . chr(0xBB) . chr(0xBF)) {
+            rewind($handle);
+        }
+
+        $header  = null;
+        $inserted = 0;
+        $skipped  = 0;
+        $errors   = [];
+        $row      = 0;
+
+        while (($line = fgetcsv($handle, 0, ',')) !== false) {
+            $row++;
+
+            // Baris pertama = header
+            if ($header === null) {
+                $header = array_map('strtolower', array_map('trim', $line));
+                continue;
+            }
+
+            // Lewati baris kosong
+            if (empty(array_filter($line))) continue;
+
+            $data = array_combine($header, $line);
+
+            // Validasi kolom wajib
+            if (empty($data['product_name'] ?? '')) {
+                $errors[] = "Baris {$row}: product_name kosong, dilewati.";
+                $skipped++;
+                continue;
+            }
+
+            $price = isset($data['price']) ? (float) str_replace([',', '.'], ['', '.'], $data['price']) : 0;
+            $stock = isset($data['stock']) ? (int) $data['stock'] : 0;
+
+            // Buat slug unik
+            $slug = Str::slug($data['product_name']);
+            $originalSlug = $slug;
+            $count = 1;
+            while (Product::where('slug', $slug)->exists()) {
+                $slug = $originalSlug . '-' . $count++;
+            }
+
+            Product::create([
+                'product_name' => trim($data['product_name']),
+                'slug'         => $slug,
+                'price'        => $price,
+                'description'  => trim($data['description'] ?? ''),
+                'stock'        => $stock,
+            ]);
+
+            $inserted++;
+        }
+
+        fclose($handle);
+
+        $msg = "{$inserted} produk berhasil diimport.";
+        if ($skipped > 0) $msg .= " {$skipped} baris dilewati.";
+        if (!empty($errors)) $msg .= ' ' . implode(' ', array_slice($errors, 0, 3));
+
+        return back()->with('success', $msg);
+    }
+
+    // ─── TEMPLATE CSV ────────────────────────────────────────────────
+    public function templateCsv()
+    {
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="template_produk.csv"',
+        ];
+
+        $callback = function () {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($handle, ['product_name', 'price', 'description', 'stock']);
+            fputcsv($handle, ['Contoh Produk', '15000', 'Deskripsi produk', '100']);
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

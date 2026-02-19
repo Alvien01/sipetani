@@ -23,7 +23,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('users', UserController::class);
+
+    // Products — custom routes HARUS sebelum resource
+    Route::get('/products/export/csv',     [ProductController::class, 'exportCsv'])->name('products.export.csv');
+    Route::post('/products/import/csv',    [ProductController::class, 'importCsv'])->name('products.import.csv');
+    Route::get('/products/template/csv',   [ProductController::class, 'templateCsv'])->name('products.template.csv');
     Route::resource('products', ProductController::class);
+
+    // Transactions — custom routes HARUS sebelum resource
+    Route::get('/transactions/export/csv',   [TransactionController::class, 'exportCsv'])->name('transactions.export.csv');
+    Route::post('/transactions/import/csv',  [TransactionController::class, 'importCsv'])->name('transactions.import.csv');
+    Route::get('/transactions/template/csv', [TransactionController::class, 'templateCsv'])->name('transactions.template.csv');
     Route::resource('transactions', TransactionController::class);
     Route::post('/forecasts/generate', [ForecastController::class, 'generate'])->name('forecasts.generate');
     Route::resource('forecasts', ForecastController::class);

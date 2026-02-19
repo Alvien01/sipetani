@@ -10,13 +10,9 @@ use Carbon\Carbon;
 
 class HasilPeramalanController extends Controller
 {
-    /**
-     * Tampilkan daftar hasil peramalan dengan filter & pagination.
-     */
     public function index(Request $request)
     {
         $products = Product::orderBy('product_name')->get();
-
         $query = HasilPeramalan::with('product')->latest();
 
         if ($request->filled('product_id')) {
@@ -28,8 +24,6 @@ class HasilPeramalanController extends Controller
         }
 
         $results = $query->paginate(20)->withQueryString();
-
-        // Statistik ringkasan untuk produk yang dipilih
         $stats = null;
         if ($request->filled('product_id')) {
             $all = HasilPeramalan::where('id_produk', $request->product_id)
@@ -53,9 +47,6 @@ class HasilPeramalanController extends Controller
         return view('hasil-peramalan.index', compact('results', 'products', 'stats'));
     }
 
-    /**
-     * Form generate hasil peramalan baru dari data transaksi.
-     */
     public function generate(Request $request)
     {
         $request->validate([
@@ -69,8 +60,6 @@ class HasilPeramalanController extends Controller
         $alpha       = (float) $request->alpha;
         $beta        = (float) $request->beta;
         $tipePeriode = $request->tipe_periode;
-
-        // Ambil transaksi
         $transactions = Transaction::where('product_id', $productId)
             ->orderBy('date_sale', 'asc')
             ->get();
@@ -79,17 +68,16 @@ class HasilPeramalanController extends Controller
             return back()->with('error', 'Tidak ada data transaksi untuk produk ini.');
         }
 
-        // Agregasi per periode
         $data = [];
         foreach ($transactions as $trx) {
             $date = Carbon::parse($trx->date_sale);
 
             if ($tipePeriode === 'bulanan') {
                 $key    = $date->format('Y-m');
-                $label  = $date->format('m-Y'); // e.g. 01-2025
+                $label  = $date->format('m-Y');
             } else {
                 $key   = $date->format('o-W');
-                $label = $date->format('W') . '-' . $date->year; // e.g. 01-2025
+                $label = $date->format('W') . '-' . $date->year; 
             }
 
             if (!isset($data[$key])) {
@@ -100,12 +88,9 @@ class HasilPeramalanController extends Controller
 
         ksort($data);
 
-        // Hapus data lama untuk produk & tipe yang sama
         HasilPeramalan::where('id_produk', $productId)
             ->where('tipe_periode', $tipePeriode)
             ->delete();
-
-        // Hitung Double Exponential Smoothing
         $st_prev = null;
         $bt_prev = null;
         $iteration = 0;
@@ -118,22 +103,17 @@ class HasilPeramalanController extends Controller
             $label  = $row['label'];
 
             if ($iteration === 0) {
-                // Inisialisasi
                 $st       = $aktual;
                 $bt       = 0;
                 $forecast = $aktual;
             } else {
-                // S't = α * Yt + (1-α) * (S't-1 + bt-1)
                 $st = $alpha * $aktual + (1 - $alpha) * ($st_prev + $bt_prev);
-                // bt = β * (S't - S't-1) + (1-β) * bt-1
                 $bt = $beta * ($st - $st_prev) + (1 - $beta) * $bt_prev;
-                // Forecast = S't-1 + bt-1
                 $forecast = $st_prev + $bt_prev;
             }
 
-            // Error
             $pe   = ($aktual != 0) ? abs($aktual - $forecast) / $aktual * 100 : null;
-            $mape = $pe; // per-period MAPE = PE; cumulative MAPE dihitung di akhir
+            $mape = $pe;
 
             if ($pe !== null) {
                 $mapeSum += $pe;
@@ -151,7 +131,7 @@ class HasilPeramalanController extends Controller
                 'alpha'        => $alpha,
                 'beta'         => $beta,
                 'pe'           => $pe !== null ? round($pe, 2) : null,
-                'mape'         => null, // akan diisi setelah loop
+                'mape'         => null, 
             ];
 
             $st_prev = $st;
@@ -159,10 +139,8 @@ class HasilPeramalanController extends Controller
             $iteration++;
         }
 
-        // Hitung MAPE kumulatif (rata-rata PE seluruh periode)
         $mapeKumulatif = $mapeCount > 0 ? round($mapeSum / $mapeCount, 2) : null;
 
-        // Simpan ke database
         foreach ($rows as &$r) {
             $r['mape'] = $mapeKumulatif;
         }
@@ -182,9 +160,6 @@ class HasilPeramalanController extends Controller
             ->with('success', 'Hasil peramalan berhasil digenerate! MAPE: ' . ($mapeKumulatif ?? '-') . '%');
     }
 
-    /**
-     * Hapus semua hasil peramalan untuk produk tertentu.
-     */
     public function destroy(Request $request)
     {
         $request->validate([

@@ -12,22 +12,17 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-gradient-to-br from-green-700 via-green-800 to-green-950 flex items-center justify-center p-4 font-sans">
-
     <div class="w-full max-w-md">
-        <!-- Card -->
         <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
-            <!-- Header -->
             <div class="bg-gradient-to-r from-green-700 to-green-800 px-8 py-8 text-center">
                 <div class="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/>
                     </svg>
                 </div>
-                <h1 class="text-2xl font-bold text-white">SiPetani</h1>
-                <p class="text-green-200 text-sm mt-1">Sistem Informasi Petani</p>
+                <h1 class="text-2xl font-bold text-white">SIPETANI</h1>
+                <p class="text-green-200 text-sm mt-1">Sistem Peramalan Penjualan Produk Pangan</p>
             </div>
-
-            <!-- Form -->
             <div class="px-8 py-8">
                 <h2 class="text-xl font-semibold text-gray-800 mb-1">Selamat Datang!</h2>
                 <p class="text-gray-500 text-sm mb-6">Masuk ke akun Anda untuk melanjutkan.</p>
@@ -40,11 +35,8 @@
                         <p class="text-red-600 text-sm">{{ $errors->first() }}</p>
                     </div>
                 @endif
-
                 <form action="{{ route('login.post') }}" method="POST" id="loginForm" class="space-y-5">
                     @csrf
-
-                    <!-- Email -->
                     <div>
                         <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
                         <div class="relative">
@@ -65,8 +57,6 @@
                             >
                         </div>
                     </div>
-
-                    <!-- Password -->
                     <div>
                         <label for="password" class="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
                         <div class="relative">
@@ -94,14 +84,10 @@
                             </button>
                         </div>
                     </div>
-
-                    <!-- Remember Me -->
                     <div class="flex items-center">
                         <input type="checkbox" id="remember" name="remember" class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer">
                         <label for="remember" class="ml-2 text-sm text-gray-600 cursor-pointer">Ingat saya</label>
                     </div>
-
-                    <!-- Submit -->
                     <button
                         type="submit"
                         id="loginBtn"
@@ -121,7 +107,6 @@
     </div>
 
     <script>
-        // Toggle password visibility
         document.getElementById('togglePassword').addEventListener('click', function () {
             const input = document.getElementById('password');
             const eyeIcon = document.getElementById('eyeIcon');

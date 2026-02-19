@@ -14,14 +14,11 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // ── Stat Cards ──────────────────────────────────────────────
         $totalUsers        = User::count();
         $totalProducts     = Product::count();
         $totalTransactions = Transaction::count();
         $totalOmzet        = Transaction::sum('total_payment');
         $totalForecast     = Forecast::distinct('product_id')->count('product_id');
-
-        // Transaksi bulan ini vs bulan lalu
         $trxBulanIni   = Transaction::whereMonth('date_sale', now()->month)
                             ->whereYear('date_sale', now()->year)->count();
         $trxBulanLalu  = Transaction::whereMonth('date_sale', now()->subMonth()->month)
@@ -30,11 +27,8 @@ class DashboardController extends Controller
                             ? round((($trxBulanIni - $trxBulanLalu) / $trxBulanLalu) * 100, 1)
                             : ($trxBulanIni > 0 ? 100 : 0);
 
-        // Omzet bulan ini
         $omzetBulanIni = Transaction::whereMonth('date_sale', now()->month)
                             ->whereYear('date_sale', now()->year)->sum('total_payment');
-
-        // ── Grafik: Transaksi per Bulan (12 bulan terakhir) ─────────
         $monthlyData = Transaction::select(
                 DB::raw('YEAR(date_sale) as year'),
                 DB::raw('MONTH(date_sale) as month'),
@@ -48,7 +42,6 @@ class DashboardController extends Controller
             ->orderBy('month')
             ->get();
 
-        // Isi bulan yang kosong agar grafik lengkap 12 titik
         $chartLabels  = [];
         $chartTrx     = [];
         $chartOmzet   = [];
@@ -68,7 +61,6 @@ class DashboardController extends Controller
             $chartQty[]    = $row ? (int) $row->total_qty    : 0;
         }
 
-        // ── Grafik: Top 5 Produk by Transaksi ───────────────────────
         $topProducts = Transaction::select(
                 'product_id',
                 DB::raw('COUNT(*) as total_trx'),
@@ -81,7 +73,6 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // ── Transaksi Terbaru ────────────────────────────────────────
         $recentTransactions = Transaction::with('product:id,product_name')
             ->latest('date_sale')
             ->limit(8)

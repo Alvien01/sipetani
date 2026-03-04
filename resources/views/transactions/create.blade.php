@@ -10,11 +10,8 @@
         <div class="px-6 py-5 border-b border-gray-100">
             <h3 class="text-base font-semibold text-gray-800">Form Tambah Transaksi</h3>
         </div>
-
         <form action="{{ route('transactions.store') }}" method="POST" class="px-6 py-6 space-y-5">
             @csrf
-
-            <!-- Product -->
             <div>
                 <label for="product_id" class="block text-sm font-semibold text-gray-700 mb-1.5">
                     Produk <span class="text-red-500">*</span>

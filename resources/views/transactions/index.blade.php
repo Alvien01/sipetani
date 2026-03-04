@@ -3,17 +3,14 @@
 @section('title', 'Transaksi')
 @section('page-title', 'Data Transaksi')
 @section('page-subtitle', 'Kelola data penjualan produk')
-
 @section('content')
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
-    <!-- Header -->
     <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
         <div>
             <h3 class="text-base font-semibold text-gray-800">Daftar Transaksi</h3>
             <p class="text-sm text-gray-500 mt-0.5">Total {{ $transactions->total() }} transaksi</p>
         </div>
         <div class="flex items-center gap-3">
-            {{-- Export Button --}}
             <a href="{{ route('transactions.export.csv') }}" target="_blank"
                class="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 text-sm font-medium rounded-xl transition-colors shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,7 +122,6 @@
             <form action="{{ route('transactions.import.csv') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="space-y-4">
-                    {{-- File Input --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Pilih File CSV/Excel</label>
                         <input type="file" name="file" required accept=".csv,.txt"
@@ -138,8 +134,6 @@
                             transition-all cursor-pointer border border-gray-200 rounded-xl">
                         <p class="text-xs text-gray-400 mt-2">Mendukung format .csv</p>
                     </div>
-
-                    {{-- Download Template --}}
                     <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center gap-3">
                         <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                             <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

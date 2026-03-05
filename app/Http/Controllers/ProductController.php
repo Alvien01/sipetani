@@ -152,75 +152,18 @@ class ProductController extends Controller
     // ─── IMPORT CSV ──────────────────────────────────────────────────
     public function importCsv(Request $request)
     {
+        set_time_limit(300);
+
         $request->validate([
-            'file' => 'required|file|mimes:csv,txt|max:5120',
+            'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:51200', // support xlsx & max 50MB
         ]);
 
-        $file   = $request->file('file');
-        $handle = fopen($file->getRealPath(), 'r');
-
-        // Hapus BOM jika ada
-        $bom = fread($handle, 3);
-        if ($bom !== chr(0xEF) . chr(0xBB) . chr(0xBF)) {
-            rewind($handle);
+        try {
+            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\ProductImport, $request->file('file'));
+            return back()->with('success', 'Produk berhasil diimport.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal import: ' . $e->getMessage());
         }
-
-        $header  = null;
-        $inserted = 0;
-        $skipped  = 0;
-        $errors   = [];
-        $row      = 0;
-
-        while (($line = fgetcsv($handle, 0, ',')) !== false) {
-            $row++;
-
-            // Baris pertama = header
-            if ($header === null) {
-                $header = array_map('strtolower', array_map('trim', $line));
-                continue;
-            }
-
-            // Lewati baris kosong
-            if (empty(array_filter($line))) continue;
-
-            $data = array_combine($header, $line);
-
-            // Validasi kolom wajib
-            if (empty($data['product_name'] ?? '')) {
-                $errors[] = "Baris {$row}: product_name kosong, dilewati.";
-                $skipped++;
-                continue;
-            }
-
-            $price = isset($data['price']) ? (float) str_replace([',', '.'], ['', '.'], $data['price']) : 0;
-            $stock = isset($data['stock']) ? (int) $data['stock'] : 0;
-
-            // Buat slug unik
-            $slug = Str::slug($data['product_name']);
-            $originalSlug = $slug;
-            $count = 1;
-            while (Product::where('slug', $slug)->exists()) {
-                $slug = $originalSlug . '-' . $count++;
-            }
-
-            Product::create([
-                'product_name' => trim($data['product_name']),
-                'slug'         => $slug,
-                'price'        => $price,
-                'description'  => trim($data['description'] ?? ''),
-                'stock'        => $stock,
-            ]);
-
-            $inserted++;
-        }
-
-        fclose($handle);
-
-        $msg = "{$inserted} produk berhasil diimport.";
-        if ($skipped > 0) $msg .= " {$skipped} baris dilewati.";
-        if (!empty($errors)) $msg .= ' ' . implode(' ', array_slice($errors, 0, 3));
-
-        return back()->with('success', $msg);
     }
 
     // ─── TEMPLATE CSV ────────────────────────────────────────────────

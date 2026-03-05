@@ -98,8 +98,10 @@ class TransactionController extends Controller
 
     public function importCsv(Request $request)
     {
+        set_time_limit(300); // 5 menit untuk proses import besar
+
         $request->validate([
-            'file' => 'required|file|mimes:csv,txt|max:30240',
+            'file' => 'required|file|mimes:csv,txt|max:65536', // max 64MB
         ]);
 
         $file   = $request->file('file');

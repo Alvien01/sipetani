@@ -21,6 +21,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             ProductSeeder::class,
+            TransactionSeeder2023::class,
+            TransactionSeeder2024::class,
+            TransactionSeeder2025::class,
         ]);
     }
 }

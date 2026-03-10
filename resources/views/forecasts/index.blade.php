@@ -6,8 +6,6 @@
 
 @section('content')
 <div class="space-y-6">
-
-    {{-- ===== FORM GENERATE ===== --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
             <div class="w-9 h-9 bg-green-700 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -21,18 +19,16 @@
                 <p class="text-xs text-gray-500 mt-0.5">Pilih produk, nilai alpha, dan tipe periode untuk menghitung peramalan</p>
             </div>
         </div>
-
         <form action="{{ route('forecasts.generate') }}" method="POST" class="px-6 py-5">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {{-- Produk --}}
                 <div>
                     <label for="product_id" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                         Produk
                     </label>
                     <select id="product_id" name="product_id" required
                         class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all">
-                        <option value="">— Pilih Produk —</option>
+                        <option value="all" {{ old('product_id') == 'all' ? 'selected' : '' }}>Semua Produk</option>
                         @foreach($products as $product)
                             <option value="{{ $product->id }}"
                                 {{ old('product_id') == $product->id ? 'selected' : '' }}>
@@ -44,8 +40,6 @@
                         <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
-
-                {{-- Alpha --}}
                 <div>
                     <label for="alpha" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                         Nilai Alpha (α)
@@ -58,8 +52,6 @@
                         <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
-
-                {{-- Tipe --}}
                 <div>
                     <label for="type" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                         Tipe Periode
@@ -74,7 +66,6 @@
                     @enderror
                 </div>
             </div>
-
             <div class="mt-5 flex justify-end">
                 <button type="submit"
                     class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-800 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-sm transition-all duration-150 cursor-pointer">
@@ -89,7 +80,6 @@
     </div>
 
     @if($forecasts->count())
-    {{-- ===== INFO CARDS ===== --}}
     @php
         $firstForecast = $forecasts->first();
         $avgPe = $forecasts->avg('pe');
@@ -97,19 +87,18 @@
         $lastForecast = $forecasts->last();
     @endphp
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {{-- Produk --}}
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Produk</p>
-            <p class="text-lg font-bold text-gray-800 mt-1 truncate">{{ $firstForecast->product->product_name ?? '-' }}</p>
+            <p class="text-lg font-bold text-gray-800 mt-1 truncate">
+                {{ $firstForecast->product->product_name ?? 'Semua Produk' }}
+            </p>
             <p class="text-xs text-gray-400 mt-0.5">α = {{ $firstForecast->alpha }}</p>
         </div>
-        {{-- Total Data --}}
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Total Data</p>
             <p class="text-2xl font-bold text-green-700 mt-1">{{ $forecasts->total() }}</p>
             <p class="text-xs text-gray-400 mt-0.5">periode {{ $firstForecast->type == 'monthly' ? 'bulanan' : 'mingguan' }}</p>
         </div>
-        {{-- Rata-rata MAPE --}}
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rata-rata MAPE</p>
             <p class="text-2xl font-bold mt-1
@@ -118,7 +107,6 @@
             </p>
             <p class="text-xs text-gray-400 mt-0.5">Mean Absolute Percentage Error</p>
         </div>
-        {{-- Forecast Berikutnya --}}
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Forecast Berikutnya</p>
             @php $nextForecast = $lastForecast->at + $lastForecast->bt; @endphp
@@ -126,8 +114,6 @@
             <p class="text-xs text-gray-400 mt-0.5">estimasi periode selanjutnya</p>
         </div>
     </div>
-
-    {{-- ===== GRAFIK ===== --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
             <div>
@@ -155,15 +141,12 @@
             </div>
         </div>
     </div>
-
-    {{-- ===== DATATABLE ===== --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
             <div>
                 <h3 class="text-base font-semibold text-gray-800">Tabel Hasil Peramalan</h3>
                 <p class="text-xs text-gray-500 mt-0.5">Detail perhitungan Double Exponential Smoothing per periode</p>
             </div>
-            {{-- Search --}}
             <div class="relative">
                 <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -172,7 +155,6 @@
                     class="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all w-52">
             </div>
         </div>
-
         <div class="overflow-x-auto">
             <table class="w-full text-sm" id="forecastTable">
                 <thead>
@@ -274,8 +256,6 @@
                 </tbody>
             </table>
         </div>
-
-        {{-- Pagination --}}
         @if($forecasts->hasPages())
         <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
             <p class="text-xs text-gray-500">
@@ -285,8 +265,6 @@
         </div>
         @endif
     </div>
-
-    {{-- ===== LEGEND / KETERANGAN ===== --}}
     <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-100 px-6 py-5">
         <h4 class="text-sm font-semibold text-green-800 mb-3">📘 Keterangan Rumus Double Exponential Smoothing</h4>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-green-900">
@@ -317,7 +295,6 @@
         </div>
     </div>
     @else
-    {{-- Empty State --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-20 text-center">
         <div class="flex flex-col items-center gap-4">
             <div class="w-20 h-20 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
@@ -333,18 +310,14 @@
         </div>
     </div>
     @endif
-
 </div>
 @endsection
 
 @push('scripts')
-{{-- Chart.js CDN --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-
-    // ===== CHART =====
     @if($forecasts->count())
     const labels  = @json($forecasts->map(function($f) {
         if ($f->type === 'monthly') {
@@ -356,7 +329,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const actuals   = @json($forecasts->pluck('total')->values());
     const forecasts = @json($forecasts->pluck('forecast')->values());
     const st        = @json($forecasts->pluck('st')->values());
-
     const ctx = document.getElementById('forecastChart');
     if (ctx) {
         new Chart(ctx, {
@@ -445,8 +417,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
     @endif
-
-    // ===== TABLE SEARCH =====
     const searchInput = document.getElementById('tableSearch');
     if (searchInput) {
         searchInput.addEventListener('input', function () {
@@ -457,7 +427,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ===== TABLE SORT =====
     const table = document.getElementById('forecastTable');
     if (table) {
         let sortDir = {};
@@ -479,7 +448,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         ? aVal.localeCompare(bVal, 'id')
                         : bVal.localeCompare(aVal, 'id');
                 });
-                // Update sort icons
                 table.querySelectorAll('.sort-icon').forEach(ic => ic.textContent = '↕');
                 this.querySelector('.sort-icon').textContent = sortDir[col] ? '↑' : '↓';
                 rows.forEach(r => tbody.appendChild(r));

@@ -8,9 +8,18 @@ use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::latest('created_at')->paginate(10);
+        $search = $request->input('search');
+
+        $products = Product::when($search, function ($query, $search) {
+                $query->where('product_name', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+            })
+            ->latest('created_at')
+            ->paginate(10)
+            ->withQueryString();
+
         return view('products.index', compact('products'));
     }
 
@@ -149,7 +158,6 @@ class ProductController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    // ─── IMPORT CSV ──────────────────────────────────────────────────
     public function importCsv(Request $request)
     {
         set_time_limit(300);
@@ -165,8 +173,7 @@ class ProductController extends Controller
             return back()->with('error', 'Gagal import: ' . $e->getMessage());
         }
     }
-
-    // ─── TEMPLATE CSV ────────────────────────────────────────────────
+ 
     public function templateCsv()
     {
         $headers = [

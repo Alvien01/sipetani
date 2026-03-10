@@ -5,14 +5,30 @@
 @section('page-subtitle', 'Kelola data penjualan produk')
 @section('content')
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
-    <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-        <div>
+    <div class="flex flex-col md:flex-row md:items-center justify-between px-6 py-5 border-b border-gray-100 gap-4">
+        <div class="flex-shrink-0">
             <h3 class="text-base font-semibold text-gray-800">Daftar Transaksi</h3>
             <p class="text-sm text-gray-500 mt-0.5">Total {{ $transactions->total() }} transaksi</p>
         </div>
-        <div class="flex items-center gap-3">
+
+        <div class="flex-1 max-w-md mx-0 md:mx-4">
+            <form action="{{ route('transactions.index') }}" method="GET">
+                <div class="relative">
+                    <input type="text" name="search" value="{{ request('search') }}" 
+                           placeholder="Cari transaksi (produk, tanggal)..." 
+                           class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="flex items-center gap-2 flex-shrink-0">
             <a href="{{ route('transactions.export.csv') }}" target="_blank"
-               class="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 text-sm font-medium rounded-xl transition-colors shadow-sm">
+               class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 text-sm font-medium rounded-xl transition-colors shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                 </svg>
@@ -21,7 +37,7 @@
 
             {{-- Import Button --}}
             <button onclick="document.getElementById('importModal').classList.remove('hidden')"
-               class="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 text-sm font-medium rounded-xl transition-colors shadow-sm cursor-pointer">
+               class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 text-sm font-medium rounded-xl transition-colors shadow-sm cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                 </svg>
@@ -30,7 +46,7 @@
 
             {{-- Create Button --}}
             <a href="{{ route('transactions.create') }}"
-               class="flex items-center gap-2 px-4 py-2.5 bg-green-700 hover:bg-green-800 text-white text-sm font-medium rounded-xl transition-colors shadow-sm">
+               class="flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-medium rounded-xl transition-colors shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>

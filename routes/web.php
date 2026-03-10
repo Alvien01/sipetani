@@ -41,5 +41,5 @@ Route::middleware('auth')->group(function () {
     // Hasil Peramalan
     Route::get('/hasil-peramalan', [HasilPeramalanController::class, 'index'])->name('hasil-peramalan.index');
     Route::post('/hasil-peramalan/generate', [HasilPeramalanController::class, 'generate'])->name('hasil-peramalan.generate');
-    Route::delete('/hasil-peramalan/destroy-filter', [HasilPeramalanController::class, 'destroy'])->name('hasil-peramalan.destroy-filter');
+    Route::delete('/hasil-peramalan/destroy-filter', [HasilPeramalanController::class, 'destroyFilter'])->name('hasil-peramalan.destroy-filter');
 });

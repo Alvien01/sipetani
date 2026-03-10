@@ -6,17 +6,26 @@ use App\Models\HasilPeramalan;
 use App\Models\Product;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB; // Tambahkan ini
 use Carbon\Carbon;
 
 class HasilPeramalanController extends Controller
 {
     public function index(Request $request)
     {
-        $products = Product::orderBy('product_name')->get();
-        $query = HasilPeramalan::with('product')->latest();
+        $products = Product::select('id', 'product_name')->orderBy('product_name')->get();
+        $query = HasilPeramalan::select('id', 'id_produk', 'periode', 'tipe_periode', 'aktual', 'st', 'bt', 'forecast', 'alpha', 'beta', 'pe', 'mape', 'created_at')
+            ->with(['product' => function ($q) {
+                $q->select('id', 'product_name');
+            }])
+            ->latest();
 
         if ($request->filled('product_id')) {
-            $query->where('id_produk', $request->product_id);
+            if ($request->product_id === 'all') {
+                $query->whereNull('id_produk');
+            } else {
+                $query->where('id_produk', $request->product_id);
+            }
         }
 
         if ($request->filled('tipe_periode')) {
@@ -26,9 +35,15 @@ class HasilPeramalanController extends Controller
         $results = $query->paginate(20)->withQueryString();
         $stats = null;
         if ($request->filled('product_id')) {
-            $all = HasilPeramalan::where('id_produk', $request->product_id)
-                ->when($request->filled('tipe_periode'), fn($q) => $q->where('tipe_periode', $request->tipe_periode))
-                ->get();
+            $statsQuery = HasilPeramalan::where('tipe_periode', $request->filled('tipe_periode') ? $request->tipe_periode : 'bulanan');
+            
+            if ($request->product_id === 'all') {
+                $statsQuery->whereNull('id_produk');
+            } else {
+                $statsQuery->where('id_produk', $request->product_id);
+            }
+
+            $all = $statsQuery->get();
 
             if ($all->isNotEmpty()) {
                 $stats = [
@@ -37,7 +52,7 @@ class HasilPeramalanController extends Controller
                     'avg_pe'      => $all->whereNotNull('pe')->avg('pe'),
                     'last_forecast' => $all->last()?->forecast,
                     'last_periode'  => $all->last()?->periode,
-                    'product_name'  => $all->first()?->product?->product_name,
+                    'product_name'  => $request->product_id === 'all' ? 'Semua Produk' : $all->first()?->product?->product_name,
                     'alpha'         => $all->first()?->alpha,
                     'beta'          => $all->first()?->beta,
                 ];
@@ -50,46 +65,44 @@ class HasilPeramalanController extends Controller
     public function generate(Request $request)
     {
         $request->validate([
-            'product_id'   => 'required|exists:products,id',
+            'product_id'   => 'required', 
             'alpha'        => 'required|numeric|min:0.01|max:0.99',
             'beta'         => 'required|numeric|min:0.00|max:0.99',
             'tipe_periode' => 'required|in:bulanan,mingguan',
         ]);
 
-        $productId   = $request->product_id;
-        $alpha       = (float) $request->alpha;
-        $beta        = (float) $request->beta;
-        $tipePeriode = $request->tipe_periode;
-        $transactions = Transaction::where('product_id', $productId)
-            ->orderBy('date_sale', 'asc')
+        $productIdInput = $request->product_id;
+        $alpha          = (float) $request->alpha;
+        $beta           = (float) $request->beta;
+        $tipePeriode    = $request->tipe_periode;
+
+        // Optimasi: Agregasi di level database (GROUP BY) untuk menghemat memori
+        $isMonthly = ($tipePeriode === 'bulanan');
+        
+        $forecastData = Transaction::query()
+            ->when($productIdInput !== 'all', function ($q) use ($productIdInput) {
+                return $q->where('product_id', $productIdInput);
+            })
+            ->select([
+                DB::raw($isMonthly ? "DATE_FORMAT(date_sale, '%m-%Y') as label" : "DATE_FORMAT(date_sale, '%v-%x') as label"),
+                DB::raw($isMonthly ? "DATE_FORMAT(date_sale, '%Y-%m') as sort_key" : "DATE_FORMAT(date_sale, '%x-%v') as sort_key"),
+                DB::raw("SUM(total_buy) as total_actual")
+            ])
+            ->groupBy('label', 'sort_key')
+            ->orderBy('sort_key', 'asc')
             ->get();
 
-        if ($transactions->isEmpty()) {
-            return back()->with('error', 'Tidak ada data transaksi untuk produk ini.');
+        if ($forecastData->isEmpty()) {
+            return back()->with('error', 'Tidak ada data transaksi untuk kriteria ini.');
         }
 
-        $data = [];
-        foreach ($transactions as $trx) {
-            $date = Carbon::parse($trx->date_sale);
-
-            if ($tipePeriode === 'bulanan') {
-                $key    = $date->format('Y-m');
-                $label  = $date->format('m-Y');
-            } else {
-                $key   = $date->format('o-W');
-                $label = $date->format('W') . '-' . $date->year; 
-            }
-
-            if (!isset($data[$key])) {
-                $data[$key] = ['total' => 0, 'label' => $label];
-            }
-            $data[$key]['total'] += $trx->total_buy;
-        }
-
-        ksort($data);
-
-        HasilPeramalan::where('id_produk', $productId)
-            ->where('tipe_periode', $tipePeriode)
+        // Hapus data lama berdasarkan filter
+        HasilPeramalan::where('tipe_periode', $tipePeriode)
+            ->when($productIdInput === 'all', function($q) {
+                return $q->whereNull('id_produk');
+            }, function($q) use ($productIdInput) {
+                return $q->where('id_produk', $productIdInput);
+            })
             ->delete();
         $st_prev = null;
         $bt_prev = null;
@@ -98,9 +111,9 @@ class HasilPeramalanController extends Controller
         $mapeCount = 0;
         $rows      = [];
 
-        foreach ($data as $key => $row) {
-            $aktual = $row['total'];
-            $label  = $row['label'];
+        foreach ($forecastData as $row) {
+            $aktual = (int) $row->total_actual;
+            $label  = $row->label;
 
             if ($iteration === 0) {
                 $st       = $aktual;
@@ -121,7 +134,7 @@ class HasilPeramalanController extends Controller
             }
 
             $rows[] = [
-                'id_produk'    => $productId,
+                'id_produk'    => ($productIdInput === 'all') ? null : $productIdInput,
                 'periode'      => $label,
                 'tipe_periode' => $tipePeriode,
                 'aktual'       => $aktual,
@@ -154,22 +167,29 @@ class HasilPeramalanController extends Controller
 
         return redirect()
             ->route('hasil-peramalan.index', [
-                'product_id'   => $productId,
+                'product_id'   => $productIdInput,
                 'tipe_periode' => $tipePeriode,
             ])
             ->with('success', 'Hasil peramalan berhasil digenerate! MAPE: ' . ($mapeKumulatif ?? '-') . '%');
     }
 
-    public function destroy(Request $request)
+    public function destroyFilter(Request $request)
     {
         $request->validate([
-            'product_id'   => 'required|exists:products,id',
-            'tipe_periode' => 'required|in:bulanan,mingguan',
+            'tipe_periode' => 'required',
         ]);
 
-        HasilPeramalan::where('id_produk', $request->product_id)
-            ->where('tipe_periode', $request->tipe_periode)
-            ->delete();
+        $query = HasilPeramalan::where('tipe_periode', $request->tipe_periode);
+
+        if ($request->filled('product_id')) {
+            if ($request->product_id === 'all') {
+                $query->whereNull('id_produk');
+            } else {
+                $query->where('id_produk', $request->product_id);
+            }
+        }
+
+        $query->delete();
 
         return back()->with('success', 'Data hasil peramalan berhasil dihapus.');
     }

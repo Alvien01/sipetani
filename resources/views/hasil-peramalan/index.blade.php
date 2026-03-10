@@ -6,8 +6,6 @@
 
 @section('content')
 <div class="space-y-6">
-
-    {{-- ===== FORM GENERATE ===== --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
             <div class="w-9 h-9 bg-emerald-700 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -30,7 +28,7 @@
                     <label for="gen_product_id" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Produk</label>
                     <select id="gen_product_id" name="product_id" required
                         class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all">
-                        <option value="">— Pilih Produk —</option>
+                        <option value="all" {{ old('product_id') == 'all' ? 'selected' : '' }}>Semua Produk (Gabungan)</option>
                         @foreach($products as $p)
                             <option value="{{ $p->id }}" {{ old('product_id') == $p->id ? 'selected' : '' }}>
                                 {{ $p->product_name }}
@@ -93,7 +91,8 @@
                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Filter Produk</label>
                 <select name="product_id"
                     class="px-3.5 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-emerald-500 outline-none transition-all">
-                    <option value="">Semua Produk</option>
+                    <option value="">-- Semua Data --</option>
+                    <option value="all" {{ request('product_id') == 'all' ? 'selected' : '' }}>Hasil Gabungan (Semua Produk)</option>
                     @foreach($products as $p)
                         <option value="{{ $p->id }}" {{ request('product_id') == $p->id ? 'selected' : '' }}>
                             {{ $p->product_name }}
@@ -273,7 +272,7 @@
                     <tr class="hover:bg-gray-50/60 transition-colors hasil-row">
                         <td class="px-4 py-3.5 text-gray-400 font-mono text-xs">{{ $results->firstItem() + $loop->index }}</td>
                         <td class="px-4 py-3.5">
-                            <span class="font-medium text-gray-800">{{ $r->product?->product_name ?? '-' }}</span>
+                            <span class="font-medium text-gray-800">{{ $r->product?->product_name ?? 'Hasil Gabungan' }}</span>
                         </td>
                         <td class="px-4 py-3.5 font-medium text-gray-700 whitespace-nowrap">{{ $r->periode }}</td>
                         <td class="px-4 py-3.5">

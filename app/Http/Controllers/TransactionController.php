@@ -8,15 +8,31 @@ use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $transactions = Transaction::with('product')->latest()->paginate(10);
+        $search = $request->input('search');
+
+        $transactions = Transaction::select('id', 'product_id', 'date_sale', 'total_buy', 'total_payment')
+            ->with(['product' => function ($query) {
+                $query->select('id', 'product_name');
+            }])
+            ->when($search, function ($query, $search) {
+                $query->whereHas('product', function ($q) use ($search) {
+                    $q->where('product_name', 'like', "%{$search}%");
+                })
+                ->orWhere('date_sale', 'like', "%{$search}%")
+                ->orWhere('total_payment', 'like', "%{$search}%");
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
         return view('transactions.index', compact('transactions'));
     }
 
     public function create()
     {
-        $products = Product::all();
+        $products = Product::select('id', 'product_name')->orderBy('product_name')->get();
         return view('transactions.create', compact('products'));
     }
 
@@ -37,7 +53,7 @@ class TransactionController extends Controller
 
     public function edit(Transaction $transaction)
     {
-        $products = Product::all();
+        $products = Product::select('id', 'product_name')->orderBy('product_name')->get();
         return view('transactions.edit', compact('transaction', 'products'));
     }
 
@@ -65,7 +81,12 @@ class TransactionController extends Controller
 
     public function exportCsv()
     {
-        $transactions = Transaction::with('product')->orderBy('date_sale', 'asc')->get();
+        $transactions = Transaction::select('id', 'product_id', 'date_sale', 'total_buy', 'total_payment')
+            ->with(['product' => function ($query) {
+                $query->select('id', 'product_name');
+            }])
+            ->orderBy('date_sale', 'asc')
+            ->get();
         $filename = 'transaksi_' . now()->format('Ymd_His') . '.csv';
         $headers = [
             'Content-Type'        => 'text/csv; charset=UTF-8',

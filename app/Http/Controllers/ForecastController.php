@@ -13,68 +13,70 @@ class ForecastController extends Controller
 {
     public function index()
     {
-        $forecasts = Forecast::with('product')->latest()->paginate(20);
-        $products = Product::all();
+        $forecasts = Forecast::select('id', 'product_id', 'type', 'month', 'weekly', 'year', 'total', 'st', 'sst', 'at', 'bt', 'forecast', 'pe', 'selisih', 'evaluasi', 'alpha')
+            ->with(['product' => function ($query) {
+                $query->select('id', 'product_name');
+            }])
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
+
+        $products = Product::select('id', 'product_name')->orderBy('product_name')->get();
         return view('forecasts.index', compact('forecasts', 'products'));
     }
 
     public function generate(Request $request)
     {
         $request->validate([
-            'product_id' => 'required|exists:products,id',
+            'product_id' => 'required', 
             'alpha'      => 'required|numeric|min:0.01|max:0.99',
             'type'       => 'required|in:monthly,weekly',
         ]);
 
-        $productId = $request->product_id;
+        $productIdInput = $request->product_id;
         $alpha = $request->alpha;
         $type = $request->type;
-        $query = Transaction::where('product_id', $productId)->orderBy('date_sale', 'asc');
-        $transactions = $query->get();
 
-        if ($transactions->isEmpty()) {
-            return back()->with('error', 'Tidak ada data transaksi untuk produk ini.');
+        // Agregasi di level database agar hemat memori
+        $isMonthly = ($type === 'monthly');
+        
+        $forecastData = Transaction::query()
+            ->when($productIdInput !== 'all', function ($q) use ($productIdInput) {
+                return $q->where('product_id', $productIdInput);
+            })
+            ->select([
+                DB::raw($isMonthly ? "DATE_FORMAT(date_sale, '%Y-%m') as period_key" : "DATE_FORMAT(date_sale, '%x-%v') as period_key"),
+                DB::raw($isMonthly ? "MONTH(date_sale) as period_num" : "WEEK(date_sale, 3) as period_num"),
+                DB::raw("YEAR(date_sale) as period_year"),
+                DB::raw("SUM(total_buy) as total_actual"),
+                // Ambil satu transaction_id sebagai referensi jika dibutuhkan relasi
+                DB::raw("MIN(id) as ref_transaction_id")
+            ])
+            ->groupBy('period_key', 'period_num', 'period_year')
+            ->orderBy('period_key', 'asc')
+            ->get();
+
+        if ($forecastData->isEmpty()) {
+            return back()->with('error', 'Tidak ada data transaksi untuk kriteria ini.');
         }
 
-        $data = [];
-        foreach ($transactions as $trx) {
-            $date = Carbon::parse($trx->date_sale);
-            
-            if ($type === 'monthly') {
-                $key = $date->format('Y-m');
-                $label = $date->format('F Y');
-                $year = $date->year;
-                $period = $date->month;
-            } else {
-                $key = $date->format('o-W');
-                $label = 'Week ' . $date->weekOfYear . ' ' . $date->year;
-                $year = $date->year;
-                $period = $date->weekOfYear;
-            }
-
-            if (!isset($data[$key])) {
-                $data[$key] = [
-                    'total' => 0,
-                    'year' => $year,
-                    'period' => $period,
-                    'transaction_ids' => []
-                ];
-            }
-            $data[$key]['total'] += $trx->total_buy;
-            $data[$key]['transaction_ids'][] = $trx->id;
-        }
-
-        ksort($data);
         $s1_prev = null;
         $s2_prev = null;
         $a_prev = null;
         $b_prev = null;
-        $forecast_val = null;
-        Forecast::where('product_id', $productId)->where('type', $type)->delete();
-        $iteration = 0;
-        foreach ($data as $key => $row) {
-            $current_actual = $row['total'];
-            $transaction_id = !empty($row['transaction_ids']) ? $row['transaction_ids'][0] : null; // Link one ID
+        
+        // Bersihkan data lama
+        Forecast::where('type', $type)
+            ->when($productIdInput === 'all', function($q) {
+                return $q->whereNull('product_id');
+            }, function($q) use ($productIdInput) {
+                return $q->where('product_id', $productIdInput);
+            })
+            ->delete();
+
+        foreach ($forecastData as $iteration => $row) {
+            $current_actual = $row->total_actual;
+            $transaction_id = $row->ref_transaction_id;
 
             if ($iteration === 0) {
                 $s1 = $current_actual;
@@ -99,12 +101,12 @@ class ForecastController extends Controller
             else $eval = 'Buruk';
 
             Forecast::create([
-                'product_id'     => $productId,
+                'product_id'     => ($productIdInput === 'all') ? null : $productIdInput,
                 'transaction_id' => $transaction_id, 
                 'type'           => $type,
-                'month'          => ($type == 'monthly') ? $row['period'] : null,
-                'weekly'         => ($type == 'weekly') ? $row['period'] : null,
-                'year'           => $row['year'],
+                'month'          => $isMonthly ? $row->period_num : null,
+                'weekly'         => !$isMonthly ? $row->period_num : null,
+                'year'           => $row->period_year,
                 'total'          => $current_actual,
                 'st'             => $s1,
                 'sst'            => $s2,

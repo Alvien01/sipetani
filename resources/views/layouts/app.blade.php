@@ -10,6 +10,48 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .select2-container .select2-selection--single {
+            height: 42px !important;
+            border-color: #e5e7eb !important;
+            border-radius: 0.75rem !important;
+            background-color: #f9fafb !important;
+            display: flex;
+            align-items: center;
+            padding-left: 0.5rem;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px !important;
+            right: 8px !important;
+        }
+        .select2-container--default .select2-selection--single:focus,
+        .select2-container--default.select2-container--open .select2-selection--single {
+            background-color: #fff !important;
+            border-color: #10b981 !important;
+            outline: none !important;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+        }
+        .select2-dropdown {
+            border-color: #e5e7eb !important;
+            border-radius: 0.75rem !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+            overflow: hidden;
+        }
+        .select2-search__field {
+            border-radius: 0.5rem !important;
+            border-color: #e5e7eb !important;
+        }
+        .select2-search__field:focus {
+            border-color: #10b981 !important;
+            outline: none !important;
+        }
+        .select2-results__option--highlighted[aria-selected] {
+            background-color: #10b981 !important;
+        }
+    </style>
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 font-sans antialiased">
@@ -75,22 +117,22 @@
                     Transaksi
                 </a>
 
-                <a href="{{ route('forecasts.index') }}"
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
-                   {{ request()->routeIs('forecasts.*') ? 'bg-white/20 text-white shadow-sm' : 'text-green-100 hover:bg-white/10 hover:text-white' }}">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
-                    </svg>
-                    Peramalan
-                </a>
-
                 <a href="{{ route('hasil-peramalan.index') }}"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
                    {{ request()->routeIs('hasil-peramalan.*') ? 'bg-white/20 text-white shadow-sm' : 'text-green-100 hover:bg-white/10 hover:text-white' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
                     </svg>
-                    Hasil Analisis
+                    Peramalan Penjualan
+                </a>
+
+                <a href="{{ route('stock-recommendations.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                   {{ request()->routeIs('stock-recommendations.*') ? 'bg-white/20 text-white shadow-sm' : 'text-green-100 hover:bg-white/10 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                    </svg>
+                    Rekomendasi Stok
                 </a>
             </nav>
 
@@ -167,5 +209,82 @@
     </script>
 
     @stack('scripts')
+    
+    <!-- jQuery & Select2 JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('select').select2({
+                width: '100%'
+            });
+        });
+        
+        // Global Table Sorting Logic
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('table').forEach(table => {
+                let sortDir = {};
+                table.querySelectorAll('th.sortable').forEach((th, index) => {
+                    // Assign data-col index if not present
+                    if (!th.dataset.col) th.dataset.col = index;
+                    
+                    // Add default sort icon
+                    if (!th.querySelector('.sort-icon')) {
+                        th.innerHTML += ' <span class="sort-icon text-gray-300 group-hover:text-emerald-500 ml-1"><svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg></span>';
+                    }
+                    th.classList.add('group', 'cursor-pointer', 'select-none');
+
+                    th.addEventListener('click', function () {
+                        const col = parseInt(this.dataset.col);
+                        sortDir[col] = !sortDir[col];
+                        const tbody = table.querySelector('tbody');
+                        if (!tbody) return;
+                        
+                        const rows = Array.from(tbody.querySelectorAll('tr'));
+                        
+                        rows.sort((a, b) => {
+                            const aValText = a.cells[col]?.textContent.trim() || '';
+                            const bValText = b.cells[col]?.textContent.trim() || '';
+                            
+                            const aClean = aValText.replace(/\./g, '').replace(',', '.').replace(/[% Rp]/g, '');
+                            const bClean = bValText.replace(/\./g, '').replace(',', '.').replace(/[% Rp]/g, '');
+                            
+                            const aNum = Number(aClean);
+                            const bNum = Number(bClean);
+                            
+                            const aIsNum = aValText !== '-' && aValText !== '—' && aValText !== '' && !isNaN(aNum);
+                            const bIsNum = bValText !== '-' && bValText !== '—' && bValText !== '' && !isNaN(bNum);
+
+                            if (aIsNum && bIsNum) {
+                                return sortDir[col] ? aNum - bNum : bNum - aNum;
+                            }
+                            
+                            // Date parsers
+                            const parseDateStr = (s) => {
+                                if (/^\d{2}-\d{4}$/.test(s)) return s.substring(3,7) + '-' + s.substring(0,2);
+                                if (/^\d{2}\s[a-zA-Z]{3}\s\d{4}$/.test(s)) return new Date(s).getTime(); // '05 Mar 2026'
+                                return s;
+                            };
+                            const aStr = parseDateStr(aValText);
+                            const bStr = parseDateStr(bValText);
+                            
+                            if (typeof aStr === 'number' && typeof bStr === 'number') {
+                                return sortDir[col] ? aStr - bStr : bStr - aStr;
+                            }
+                            
+                            return sortDir[col] ? String(aStr).localeCompare(String(bStr), 'id') : String(bStr).localeCompare(String(aStr), 'id');
+                        });
+                        
+                        table.querySelectorAll('.sort-icon').forEach(ic => ic.innerHTML = '<svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>');
+                        this.querySelector('.sort-icon').innerHTML = sortDir[col] 
+                            ? '<svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>' 
+                            : '<svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>';
+                        
+                        rows.forEach(r => tbody.appendChild(r));
+                    });
+                });
+            });
+        });
+    </script>
 </body>
 </html>

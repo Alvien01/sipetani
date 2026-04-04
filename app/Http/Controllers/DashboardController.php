@@ -18,7 +18,7 @@ class DashboardController extends Controller
         $totalProducts     = Product::count();
         $totalTransactions = Transaction::count();
         $totalOmzet        = Transaction::sum('total_payment');
-        $totalForecast     = Forecast::distinct('product_id')->count('product_id');
+        $totalForecast     = HasilPeramalan::distinct('id_produk')->count('id_produk');
         $trxBulanIni   = Transaction::whereMonth('date_sale', now()->month)
                             ->whereYear('date_sale', now()->year)->count();
         $trxBulanLalu  = Transaction::whereMonth('date_sale', now()->subMonth()->month)

@@ -26,10 +26,10 @@
         <table class="w-full">
             <thead>
                 <tr class="bg-gray-50 text-left">
-                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
-                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama</th>
-                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
-                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Dibuat</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable">#</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable">Nama</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable">Email</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable">Dibuat</th>
                     <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
                 </tr>
             </thead>

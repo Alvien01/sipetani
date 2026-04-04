@@ -60,11 +60,11 @@
         <table class="w-full">
             <thead>
                 <tr class="bg-gray-50 text-left">
-                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
-                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
-                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Produk</th>
-                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Jumlah (Qty)</th>
-                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Pembayaran</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable">#</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable">Tanggal</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable">Produk</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable">Jumlah (Qty)</th>
+                    <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable">Total Pembayaran</th>
                     <th class="px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
                 </tr>
             </thead>

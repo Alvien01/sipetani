@@ -5,8 +5,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TransactionController;
-use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\HasilPeramalanController;
+use App\Http\Controllers\StockRecommendationController;
 use Illuminate\Support\Facades\Route;
 
 // Authentication Routes
@@ -35,11 +35,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/transactions/import/csv',  [TransactionController::class, 'importCsv'])->name('transactions.import.csv');
     Route::get('/transactions/template/csv', [TransactionController::class, 'templateCsv'])->name('transactions.template.csv');
     Route::resource('transactions', TransactionController::class);
-    Route::post('/forecasts/generate', [ForecastController::class, 'generate'])->name('forecasts.generate');
-    Route::resource('forecasts', ForecastController::class);
 
-    // Hasil Peramalan
+    // Hasil Peramalan (Holt-Winters)
     Route::get('/hasil-peramalan', [HasilPeramalanController::class, 'index'])->name('hasil-peramalan.index');
     Route::post('/hasil-peramalan/generate', [HasilPeramalanController::class, 'generate'])->name('hasil-peramalan.generate');
     Route::delete('/hasil-peramalan/destroy-filter', [HasilPeramalanController::class, 'destroyFilter'])->name('hasil-peramalan.destroy-filter');
+
+    // Rekomendasi Stok
+    Route::get('/stock-recommendations', [StockRecommendationController::class, 'index'])->name('stock-recommendations.index');
+    Route::delete('/stock-recommendations/destroy', [StockRecommendationController::class, 'destroyFilter'])->name('stock-recommendations.destroy');
 });

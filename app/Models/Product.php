@@ -13,6 +13,7 @@ class Product extends Model
         'price',
         'description',
         'stock',
+        'safety_stock',
         'images',
     ];
 
@@ -35,11 +36,6 @@ class Product extends Model
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
-    }
-
-    public function forecasts()
-    {
-        return $this->hasMany(Forecast::class);
     }
 
     public function hasilPeramalan()

@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('title', 'Hasil Peramalan')
-@section('page-title', 'Hasil Analisis Peramalan')
-@section('page-subtitle', 'Double Exponential Smoothing — Tabel hasil_peramalan')
+@section('page-title', 'Peramalan Penjualan')
+@section('page-subtitle', 'Holt Winters Exponential Smoothing')
 
 @section('content')
 <div class="space-y-6">
@@ -16,21 +16,21 @@
             </div>
             <div>
                 <h3 class="text-base font-semibold text-gray-800">Generate Hasil Peramalan</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Hitung dan simpan hasil peramalan ke tabel <code class="bg-gray-100 px-1 rounded text-emerald-700">hasil_peramalan</code></p>
+                <p class="text-xs text-gray-500 mt-0.5">Hitung dan simpan hasil peramalan</p>
             </div>
         </div>
 
         <form action="{{ route('hasil-peramalan.generate') }}" method="POST" class="px-6 py-5">
             @csrf
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                 {{-- Produk --}}
                 <div>
                     <label for="gen_product_id" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Produk</label>
                     <select id="gen_product_id" name="product_id" required
                         class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all">
-                        <option value="all" {{ old('product_id') == 'all' ? 'selected' : '' }}>Semua Produk (Gabungan)</option>
+                        <option value="all" {{ old('product_id', request('product_id')) == 'all' ? 'selected' : '' }}>Semua Produk (Gabungan)</option>
                         @foreach($products as $p)
-                            <option value="{{ $p->id }}" {{ old('product_id') == $p->id ? 'selected' : '' }}>
+                            <option value="{{ $p->id }}" {{ old('product_id', request('product_id')) == $p->id ? 'selected' : '' }}>
                                 {{ $p->product_name }}
                             </option>
                         @endforeach
@@ -44,7 +44,7 @@
                         Alpha (α) <span class="normal-case font-normal text-gray-400">0.01–0.99</span>
                     </label>
                     <input type="number" id="gen_alpha" name="alpha" step="0.01" min="0.01" max="0.99"
-                        value="{{ old('alpha', 0.3) }}" required
+                        value="{{ old('alpha', isset($stats) && $stats ? $stats['alpha'] : 0.3) }}" required
                         class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all">
                     @error('alpha')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
                 </div>
@@ -55,9 +55,31 @@
                         Beta (β) <span class="normal-case font-normal text-gray-400">0.00–0.99</span>
                     </label>
                     <input type="number" id="gen_beta" name="beta" step="0.01" min="0.00" max="0.99"
-                        value="{{ old('beta', 0.3) }}" required
+                        value="{{ old('beta', isset($stats) && $stats ? $stats['beta'] : 0.1) }}" required
                         class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all">
                     @error('beta')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                {{-- Gamma --}}
+                <div>
+                    <label for="gen_gamma" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                        Gamma (γ) <span class="normal-case font-normal text-gray-400">0.00–0.99</span>
+                    </label>
+                    <input type="number" id="gen_gamma" name="gamma" step="0.01" min="0.00" max="0.99"
+                        value="{{ old('gamma', isset($stats) && $stats ? ($stats['gamma'] ?? 0.2) : 0.2) }}" required
+                        class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all">
+                    @error('gamma')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                {{-- Seasonal Length --}}
+                <div>
+                    <label for="gen_season" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                        Musim (L)
+                    </label>
+                    <input type="number" id="gen_season" name="seasonal_length" step="1" min="2"
+                        value="{{ old('seasonal_length', isset($stats) && $stats ? ($stats['seasonal_length'] ?? 12) : 12) }}" required
+                        class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all">
+                    @error('seasonal_length')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 {{-- Tipe Periode --}}
@@ -65,8 +87,8 @@
                     <label for="gen_tipe" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Tipe Periode</label>
                     <select id="gen_tipe" name="tipe_periode" required
                         class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all">
-                        <option value="bulanan" {{ old('tipe_periode') == 'bulanan' ? 'selected' : '' }}>Bulanan</option>
-                        <option value="mingguan" {{ old('tipe_periode') == 'mingguan' ? 'selected' : '' }}>Mingguan</option>
+                        <option value="bulanan" {{ old('tipe_periode', request('tipe_periode')) == 'bulanan' ? 'selected' : '' }}>Bulanan</option>
+                        <option value="mingguan" {{ old('tipe_periode', request('tipe_periode')) == 'mingguan' ? 'selected' : '' }}>Mingguan</option>
                     </select>
                     @error('tipe_periode')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
                 </div>
@@ -84,57 +106,16 @@
         </form>
     </div>
 
-    {{-- ===== FILTER ===== --}}
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-4">
-        <form method="GET" action="{{ route('hasil-peramalan.index') }}" class="flex flex-wrap items-end gap-3">
-            <div>
-                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Filter Produk</label>
-                <select name="product_id"
-                    class="px-3.5 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-emerald-500 outline-none transition-all">
-                    <option value="">-- Semua Data --</option>
-                    <option value="all" {{ request('product_id') == 'all' ? 'selected' : '' }}>Hasil Gabungan (Semua Produk)</option>
-                    @foreach($products as $p)
-                        <option value="{{ $p->id }}" {{ request('product_id') == $p->id ? 'selected' : '' }}>
-                            {{ $p->product_name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Tipe Periode</label>
-                <select name="tipe_periode"
-                    class="px-3.5 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-emerald-500 outline-none transition-all">
-                    <option value="">Semua Tipe</option>
-                    <option value="bulanan"  {{ request('tipe_periode') == 'bulanan'  ? 'selected' : '' }}>Bulanan</option>
-                    <option value="mingguan" {{ request('tipe_periode') == 'mingguan' ? 'selected' : '' }}>Mingguan</option>
-                </select>
-            </div>
-            <button type="submit"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-medium rounded-xl transition-colors cursor-pointer">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
-                </svg>
-                Terapkan Filter
-            </button>
-            @if(request()->hasAny(['product_id','tipe_periode']))
-            <a href="{{ route('hasil-peramalan.index') }}"
-                class="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-                Reset
-            </a>
-            @endif
-        </form>
-    </div>
+
 
     {{-- ===== STATS CARDS (jika filter produk aktif) ===== --}}
+    @if(request()->filled('product_id') && request()->filled('tipe_periode'))
     @if($stats)
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Produk</p>
             <p class="text-base font-bold text-gray-800 mt-1 truncate">{{ $stats['product_name'] }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">α={{ $stats['alpha'] }} β={{ $stats['beta'] }}</p>
+            <p class="text-xs text-gray-400 mt-0.5">α={{ $stats['alpha'] }} β={{ $stats['beta'] }} γ={{ $stats['gamma'] ?? '-' }} L={{ $stats['seasonal_length'] ?? '-' }}</p>
         </div>
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Total Periode</p>
@@ -167,7 +148,7 @@
         <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
             <div>
                 <h3 class="text-base font-semibold text-gray-800">Grafik Kurva Peramalan</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Aktual vs Forecast — Double Exponential Smoothing (Holt's Method)</p>
+                <p class="text-xs text-gray-500 mt-0.5">Aktual vs Forecast — Holt-Winters Triple Exponential Smoothing</p>
             </div>
             <div class="flex items-center gap-5 text-xs">
                 <span class="flex items-center gap-1.5">
@@ -239,15 +220,15 @@
                 <thead>
                     <tr class="bg-gray-50 text-left">
                         @php
-                            $cols = ['#', 'Produk', 'Periode', 'Tipe', 'Aktual', 'St', 'bt', 'Forecast', 'Alpha', 'Beta', 'PE (%)', 'MAPE (%)', 'Evaluasi', 'Dibuat'];
+                            $cols = ['#', 'Produk', 'Periode', 'Tipe', 'Aktual', 'St', 'bt', 'It', 'Forecast', 'Alpha', 'Beta', 'Gamma', 'L', 'PE (%)', 'MAPE (%)', 'Evaluasi', 'Dibuat'];
                         @endphp
                         @foreach($cols as $ci => $col)
                         <th class="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap
-                            {{ in_array($ci, [0,3,12,13]) ? '' : 'cursor-pointer select-none' }}"
-                            {{ !in_array($ci, [0,3,12,13]) ? 'data-col="'.$ci.'"' : '' }}>
+                            {{ in_array($ci, [0,3,15,16]) ? '' : 'cursor-pointer select-none' }}"
+                            {{ !in_array($ci, [0,3,15,16]) ? 'data-col="'.$ci.'"' : '' }}>
                             <div class="flex items-center gap-1">
                                 {{ $col }}
-                                @if(!in_array($ci, [0,3,12,13]))
+                                @if(!in_array($ci, [0,3,15,16]))
                                     <span class="sort-icon text-gray-300">↕</span>
                                 @endif
                             </div>
@@ -286,9 +267,12 @@
                         </td>
                         <td class="px-4 py-3.5 text-gray-600">{{ number_format($r->st, 2, ',', '.') }}</td>
                         <td class="px-4 py-3.5 text-gray-600">{{ number_format($r->bt, 2, ',', '.') }}</td>
+                        <td class="px-4 py-3.5 text-gray-600">{{ number_format($r->it, 2, ',', '.') }}</td>
                         <td class="px-4 py-3.5 font-semibold text-blue-700">{{ number_format($r->forecast, 2, ',', '.') }}</td>
                         <td class="px-4 py-3.5 text-gray-500 text-center">{{ $r->alpha }}</td>
                         <td class="px-4 py-3.5 text-gray-500 text-center">{{ $r->beta }}</td>
+                        <td class="px-4 py-3.5 text-gray-500 text-center">{{ $r->gamma ?? '-' }}</td>
+                        <td class="px-4 py-3.5 text-gray-500 text-center">{{ $r->seasonal_length ?? '-' }}</td>
                         <td class="px-4 py-3.5">
                             @if($peVal !== null)
                             <div class="flex items-center gap-2">
@@ -324,7 +308,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="14" class="px-6 py-20 text-center">
+                        <td colspan="17" class="px-6 py-20 text-center">
                             <div class="flex flex-col items-center gap-4">
                                 <div class="w-16 h-16 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full flex items-center justify-center">
                                     <svg class="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -357,14 +341,15 @@
 
     {{-- ===== KETERANGAN RUMUS ===== --}}
     <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100 px-6 py-5">
-        <h4 class="text-sm font-semibold text-emerald-800 mb-3">📘 Rumus Holt's Double Exponential Smoothing</h4>
+        <h4 class="text-sm font-semibold text-emerald-800 mb-3">📘 Rumus Holt-Winters Additive Method</h4>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-emerald-900">
             <div class="space-y-1.5">
-                <p><span class="font-semibold">Sₜ</span> = α·Yₜ + (1−α)·(Sₜ₋₁ + bₜ₋₁) &nbsp;→&nbsp; <em>Level (St)</em></p>
+                <p><span class="font-semibold">Sₜ</span> = α·(Yₜ - Iₜ₋ₗ) + (1−α)·(Sₜ₋₁ + bₜ₋₁) &nbsp;→&nbsp; <em>Level (St)</em></p>
                 <p><span class="font-semibold">bₜ</span> = β·(Sₜ − Sₜ₋₁) + (1−β)·bₜ₋₁ &nbsp;→&nbsp; <em>Trend (bt)</em></p>
+                <p><span class="font-semibold">Iₜ</span> = γ·(Yₜ − Sₜ) + (1−γ)·Iₜ₋ₗ &nbsp;→&nbsp; <em>Musiman (It)</em></p>
             </div>
             <div class="space-y-1.5">
-                <p><span class="font-semibold">F̂ₜ₊₁</span> = Sₜ + bₜ &nbsp;→&nbsp; <em>Forecast 1 periode ke depan</em></p>
+                <p><span class="font-semibold">F̂ₜ₊₁</span> = Sₜ + bₜ + Iₜ₋ₗ₊₁ &nbsp;→&nbsp; <em>Forecast 1 periode ke depan</em></p>
                 <p><span class="font-semibold">MAPE</span> = (1/n) Σ |Yₜ − F̂ₜ| / Yₜ × 100%</p>
             </div>
         </div>
@@ -382,8 +367,20 @@
                 <span class="w-2 h-2 rounded-full bg-red-500"></span>Buruk: MAPE ≥ 50%
             </span>
         </div>
+        </div>
     </div>
-
+    @else
+    {{-- KONDISI AWAL (KOSONG) --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center">
+        <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5">
+            <svg class="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-800">Belum Ada Analisis Ditampilkan</h3>
+        <p class="text-sm text-gray-500 mt-2 max-w-md mx-auto">Silakan pilih produk, atur parameter (<span class="font-mono text-xs">α, β, γ, L</span>) di form atas, kemudian tekan <span class="font-semibold text-emerald-700">Generate & Simpan</span> untuk memunculkan grafis dan tabel peramalan.</p>
+    </div>
+    @endif
 </div>
 @endsection
 
@@ -489,31 +486,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const q = this.value.toLowerCase();
             document.querySelectorAll('.hasil-row').forEach(row => {
                 row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
-            });
-        });
-    }
-
-    // ===== SORT =====
-    const table = document.getElementById('hasilTable');
-    if (table) {
-        let sortDir = {};
-        table.querySelectorAll('th[data-col]').forEach(th => {
-            th.addEventListener('click', function () {
-                const col = parseInt(this.dataset.col);
-                sortDir[col] = !sortDir[col];
-                const tbody = document.getElementById('hasilTbody');
-                const rows  = Array.from(tbody.querySelectorAll('.hasil-row'));
-                rows.sort((a, b) => {
-                    const aVal = a.cells[col]?.textContent.trim().replace(/[.,\s%]/g, '') || '';
-                    const bVal = b.cells[col]?.textContent.trim().replace(/[.,\s%]/g, '') || '';
-                    const aNum = parseFloat(aVal.replace(',', '.'));
-                    const bNum = parseFloat(bVal.replace(',', '.'));
-                    if (!isNaN(aNum) && !isNaN(bNum)) return sortDir[col] ? aNum - bNum : bNum - aNum;
-                    return sortDir[col] ? aVal.localeCompare(bVal, 'id') : bVal.localeCompare(aVal, 'id');
-                });
-                table.querySelectorAll('.sort-icon').forEach(ic => ic.textContent = '↕');
-                this.querySelector('.sort-icon').textContent = sortDir[col] ? '↑' : '↓';
-                rows.forEach(r => tbody.appendChild(r));
             });
         });
     }

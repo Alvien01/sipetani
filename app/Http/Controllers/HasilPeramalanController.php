@@ -172,9 +172,9 @@ class HasilPeramalanController extends Controller
         }
         $avgL = $actualL > 0 ? $sumL / $actualL : 0;
 
-        $seasonalIndices = array_fill(0, $seasonalLength, 0);
+        $seasonalIndices = array_fill(0, $seasonalLength, 1);
         for($i=0; $i<$actualL; $i++) {
-            $seasonalIndices[$i] = $tempData[$i]->total_actual - $avgL;
+            $seasonalIndices[$i] = $avgL > 0 ? $tempData[$i]->total_actual / $avgL : 1;
         }
 
         // Stabilize Trend Initialization
@@ -209,10 +209,10 @@ class HasilPeramalanController extends Controller
                 $forecast = max(0, $aktual);
                 $it       = $prevSeason;
             } else {
-                $st = $alpha * ($aktual - $prevSeason) + (1 - $alpha) * ($st_prev + $bt_prev);
+                $st = $prevSeason != 0 ? $alpha * ($aktual / $prevSeason) + (1 - $alpha) * ($st_prev + $bt_prev) : ($st_prev + $bt_prev);
                 $bt = $beta * ($st - $st_prev) + (1 - $beta) * $bt_prev;
-                $forecast = max(0, $st_prev + $bt_prev + $prevSeason);
-                $it = $gamma * ($aktual - $st) + (1 - $gamma) * $prevSeason;
+                $forecast = max(0, ($st_prev + $bt_prev) * $prevSeason);
+                $it = $st != 0 ? $gamma * ($aktual / $st) + (1 - $gamma) * $prevSeason : $prevSeason;
             }
 
             $seasonalIndices[$seasonIndex] = $it;
@@ -252,7 +252,7 @@ class HasilPeramalanController extends Controller
             ? Carbon::createFromFormat('m-Y', $label)->addMonth()->format('m-Y') 
             : Carbon::now()->addWeek()->format('v-Y'); // simplified naming
         $nextSeasonIndex = $iteration % $seasonalLength;
-        $nextForecast = round($st_prev + $bt_prev + $seasonalIndices[$nextSeasonIndex], 2);
+        $nextForecast = round(($st_prev + $bt_prev) * $seasonalIndices[$nextSeasonIndex], 2);
 
         // Save recommendation
         if ($productIdInput !== 'all') {

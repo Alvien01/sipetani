@@ -117,7 +117,7 @@
                     Transaksi
                 </a>
 
-                <a href="{{ route('hasil-peramalan.index') }}"
+                {{-- <a href="{{ route('hasil-peramalan.index') }}"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
                    {{ request()->routeIs('hasil-peramalan.*') ? 'bg-white/20 text-white shadow-sm' : 'text-green-100 hover:bg-white/10 hover:text-white' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,7 +133,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                     </svg>
                     Rekomendasi Stok
-                </a>
+                </a> --}}
             </nav>
 
             <!-- User Info -->
@@ -209,7 +209,7 @@
     </script>
 
     @stack('scripts')
-    
+
     <!-- jQuery & Select2 JS -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -219,7 +219,7 @@
                 width: '100%'
             });
         });
-        
+
         // Global Table Sorting Logic
         document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('table').forEach(table => {
@@ -227,7 +227,7 @@
                 table.querySelectorAll('th.sortable').forEach((th, index) => {
                     // Assign data-col index if not present
                     if (!th.dataset.col) th.dataset.col = index;
-                    
+
                     // Add default sort icon
                     if (!th.querySelector('.sort-icon')) {
                         th.innerHTML += ' <span class="sort-icon text-gray-300 group-hover:text-emerald-500 ml-1"><svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg></span>';
@@ -239,26 +239,26 @@
                         sortDir[col] = !sortDir[col];
                         const tbody = table.querySelector('tbody');
                         if (!tbody) return;
-                        
+
                         const rows = Array.from(tbody.querySelectorAll('tr'));
-                        
+
                         rows.sort((a, b) => {
                             const aValText = a.cells[col]?.textContent.trim() || '';
                             const bValText = b.cells[col]?.textContent.trim() || '';
-                            
+
                             const aClean = aValText.replace(/\./g, '').replace(',', '.').replace(/[% Rp]/g, '');
                             const bClean = bValText.replace(/\./g, '').replace(',', '.').replace(/[% Rp]/g, '');
-                            
+
                             const aNum = Number(aClean);
                             const bNum = Number(bClean);
-                            
+
                             const aIsNum = aValText !== '-' && aValText !== '—' && aValText !== '' && !isNaN(aNum);
                             const bIsNum = bValText !== '-' && bValText !== '—' && bValText !== '' && !isNaN(bNum);
 
                             if (aIsNum && bIsNum) {
                                 return sortDir[col] ? aNum - bNum : bNum - aNum;
                             }
-                            
+
                             // Date parsers
                             const parseDateStr = (s) => {
                                 if (/^\d{2}-\d{4}$/.test(s)) return s.substring(3,7) + '-' + s.substring(0,2);
@@ -267,19 +267,19 @@
                             };
                             const aStr = parseDateStr(aValText);
                             const bStr = parseDateStr(bValText);
-                            
+
                             if (typeof aStr === 'number' && typeof bStr === 'number') {
                                 return sortDir[col] ? aStr - bStr : bStr - aStr;
                             }
-                            
+
                             return sortDir[col] ? String(aStr).localeCompare(String(bStr), 'id') : String(bStr).localeCompare(String(aStr), 'id');
                         });
-                        
+
                         table.querySelectorAll('.sort-icon').forEach(ic => ic.innerHTML = '<svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>');
-                        this.querySelector('.sort-icon').innerHTML = sortDir[col] 
-                            ? '<svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>' 
+                        this.querySelector('.sort-icon').innerHTML = sortDir[col]
+                            ? '<svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>'
                             : '<svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>';
-                        
+
                         rows.forEach(r => tbody.appendChild(r));
                     });
                 });

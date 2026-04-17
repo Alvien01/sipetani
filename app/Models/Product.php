@@ -15,6 +15,7 @@ class Product extends Model
         'stock',
         'safety_stock',
         'images',
+        'id_kategori',
     ];
 
     public $timestamps = false;
@@ -41,5 +42,10 @@ class Product extends Model
     public function hasilPeramalan()
     {
         return $this->hasMany(HasilPeramalan::class, 'id_produk');
+    }
+
+    public function kategori()
+    {
+        return $this->belongsTo(Kategori::class, 'id_kategori');
     }
 }

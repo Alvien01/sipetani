@@ -7,15 +7,23 @@
 @section('content')
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between px-6 py-5 border-b border-gray-100 gap-4">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between px-6 py-5 border-b border-gray-100 gap-4">
         <div class="flex-shrink-0">
             <h3 class="text-base font-semibold text-gray-800">Daftar Produk</h3>
             <p class="text-sm text-gray-500 mt-0.5">Total {{ $products->total() }} produk</p>
         </div>
         
-        <div class="flex-1 max-w-md mx-0 md:mx-4">
-            <form action="{{ route('products.index') }}" method="GET">
-                <div class="relative">
+        <div class="flex-1 w-full lg:max-w-xl mx-0 lg:mx-4">
+            <form action="{{ route('products.index') }}" method="GET" class="flex flex-col sm:flex-row gap-2 w-full">
+                <select name="id_kategori" class="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white" onchange="this.form.submit()">
+                    <option value="">Semua Kategori</option>
+                    @foreach($kategoris as $kategori)
+                        <option value="{{ $kategori->id }}" {{ $id_kategori == $kategori->id ? 'selected' : '' }}>
+                            {{ $kategori->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <div class="relative flex-1">
                     <input type="text" name="search" value="{{ request('search') }}" 
                            placeholder="Cari nama produk..." 
                            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
@@ -28,7 +36,7 @@
             </form>
         </div>
 
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="flex flex-wrap items-center gap-2 flex-shrink-0 w-full lg:w-auto mt-2 lg:mt-0">
             {{-- Export Button --}}
             <a href="{{ route('products.export.csv') }}" target="_blank"
                class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 text-sm font-medium rounded-xl transition-colors shadow-sm">
@@ -90,6 +98,7 @@
                             <div>
                                 <p class="text-sm font-medium text-gray-800">{{ $product->product_name }}</p>
                                 <p class="text-xs text-gray-400">{{ $product->slug }}</p>
+                                <p class="text-xs text-green-600 mt-0.5">Kategori: {{ $product->kategori->name ?? 'Tanpa Kategori' }}</p>
                             </div>
                         </div>
                     </td>

@@ -54,12 +54,32 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-gray-50 font-sans antialiased">
+<body class="bg-gray-50 font-sans antialiased overflow-hidden lg:overflow-auto">
 
-    <!-- Sidebar -->
-    <div class="flex h-screen overflow-hidden">
+    <!-- Mobile Header -->
+    <div class="lg:hidden bg-gradient-to-r from-green-800 to-green-900 text-white px-4 py-3 flex items-center justify-between shadow-md z-40 relative">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/>
+                </svg>
+            </div>
+            <h1 class="text-base font-bold tracking-tight">SiPetani</h1>
+        </div>
+        <button id="mobileMenuBtn" class="p-2 text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-gray-900/50 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0 cursor-pointer"></div>
+
+    <!-- Layout Wrapper -->
+    <div class="flex h-[calc(100vh-56px)] lg:h-screen w-full overflow-hidden relative">
         <!-- Sidebar -->
-        <aside id="sidebar" class="w-64 bg-gradient-to-b from-green-800 to-green-900 text-white flex flex-col shadow-xl transition-all duration-300 z-30">
+        <aside id="sidebar" class="absolute lg:static inset-y-0 left-0 w-64 bg-gradient-to-b from-green-800 to-green-900 text-white flex flex-col shadow-2xl lg:shadow-xl transition-transform duration-300 z-50 transform -translate-x-full lg:translate-x-0 h-full">
             <!-- Logo -->
             <div class="flex items-center gap-3 px-6 py-5 border-b border-green-700/50">
                 <div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
@@ -95,6 +115,15 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                     </svg>
                     Users
+                </a>
+
+                <a href="{{ route('kategoris.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                   {{ request()->routeIs('kategoris.*') ? 'bg-white/20 text-white shadow-sm' : 'text-green-100 hover:bg-white/10 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                    Kategori
                 </a>
 
                 <a href="{{ route('products.index') }}"
@@ -214,14 +243,34 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
-        $(document).ready(function() {
+        // Global Table Sorting Logic
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mobile Sidebar Toggle
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            let sidebarOpen = false;
+
+            function toggleSidebar() {
+                sidebarOpen = !sidebarOpen;
+                if (sidebarOpen) {
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebarOverlay.classList.remove('hidden');
+                    setTimeout(() => sidebarOverlay.classList.remove('opacity-0'), 10);
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                    sidebarOverlay.classList.add('opacity-0');
+                    setTimeout(() => sidebarOverlay.classList.add('hidden'), 300);
+                }
+            }
+
+            if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', toggleSidebar);
+            if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
+
             $('select').select2({
                 width: '100%'
             });
         });
-
-        // Global Table Sorting Logic
-        document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('table').forEach(table => {
                 let sortDir = {};
                 table.querySelectorAll('th.sortable').forEach((th, index) => {

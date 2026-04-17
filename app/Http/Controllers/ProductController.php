@@ -11,26 +11,35 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        // Default ke ID 1 (Sayur) jika parameter id_kategori tidak ada dalam URL
+        $id_kategori = $request->has('id_kategori') ? $request->input('id_kategori') : 1;
+
+        $kategoris = \App\Models\Kategori::all();
 
         $products = Product::when($search, function ($query, $search) {
                 $query->where('product_name', 'like', "%{$search}%")
                       ->orWhere('description', 'like', "%{$search}%");
             })
+            ->when($id_kategori, function ($query, $id_kategori) {
+                $query->where('id_kategori', $id_kategori);
+            })
             ->latest('created_at')
             ->paginate(10)
             ->withQueryString();
 
-        return view('products.index', compact('products'));
+        return view('products.index', compact('products', 'kategoris', 'id_kategori'));
     }
 
     public function create()
     {
-        return view('products.create');
+        $kategoris = \App\Models\Kategori::all();
+        return view('products.create', compact('kategoris'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
+            'id_kategori'  => 'nullable|exists:kategoris,id',
             'product_name' => 'required|string|max:255',
             'price'        => 'required|numeric|min:0',
             'description'  => 'nullable|string',
@@ -51,6 +60,7 @@ class ProductController extends Controller
         }
 
         Product::create([
+            'id_kategori'  => $request->id_kategori,
             'product_name' => $request->product_name,
             'slug'         => $slug,
             'price'        => $request->price,
@@ -70,12 +80,14 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        return view('products.edit', compact('product'));
+        $kategoris = \App\Models\Kategori::all();
+        return view('products.edit', compact('product', 'kategoris'));
     }
 
     public function update(Request $request, Product $product)
     {
         $request->validate([
+            'id_kategori'  => 'nullable|exists:kategoris,id',
             'product_name' => 'required|string|max:255',
             'price'        => 'required|numeric|min:0',
             'description'  => 'nullable|string',
@@ -84,6 +96,7 @@ class ProductController extends Controller
         ]);
 
         $data = [
+            'id_kategori'  => $request->id_kategori,
             'product_name' => $request->product_name,
             'price'        => $request->price,
             'description'  => $request->description,

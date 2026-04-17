@@ -35,6 +35,25 @@
                 @enderror
             </div>
 
+            <!-- Kategori -->
+            <div>
+                <label for="id_kategori" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Kategori <span class="text-gray-400 font-normal">(opsional)</span>
+                </label>
+                <select name="id_kategori" id="id_kategori"
+                        class="w-full px-4 py-3 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all border-gray-200">
+                    <option value="">-- Pilih Kategori --</option>
+                    @foreach($kategoris as $kategori)
+                        <option value="{{ $kategori->id }}" {{ old('id_kategori', $product->id_kategori) == $kategori->id ? 'selected' : '' }}>
+                            {{ $kategori->name }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('id_kategori')
+                    <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
             <!-- Price & Stock -->
             <div class="grid grid-cols-2 gap-4">
                 <div>

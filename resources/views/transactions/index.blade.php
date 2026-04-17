@@ -5,13 +5,13 @@
 @section('page-subtitle', 'Kelola data penjualan produk')
 @section('content')
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
-    <div class="flex flex-col md:flex-row md:items-center justify-between px-6 py-5 border-b border-gray-100 gap-4">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between px-6 py-5 border-b border-gray-100 gap-4">
         <div class="flex-shrink-0">
             <h3 class="text-base font-semibold text-gray-800">Daftar Transaksi</h3>
             <p class="text-sm text-gray-500 mt-0.5">Total {{ $transactions->total() }} transaksi</p>
         </div>
 
-        <div class="flex-1 max-w-md mx-0 md:mx-4">
+        <div class="flex-1 w-full lg:max-w-md mx-0 lg:mx-4">
             <form action="{{ route('transactions.index') }}" method="GET">
                 <div class="relative">
                     <input type="text" name="search" value="{{ request('search') }}" 
@@ -26,7 +26,7 @@
             </form>
         </div>
 
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="flex flex-wrap items-center gap-2 flex-shrink-0 w-full lg:w-auto mt-2 lg:mt-0">
             <a href="{{ route('transactions.export.csv') }}" target="_blank"
                class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 text-sm font-medium rounded-xl transition-colors shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

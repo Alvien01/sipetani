@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/products/export/csv',     [ProductController::class, 'exportCsv'])->name('products.export.csv');
     Route::post('/products/import/csv',    [ProductController::class, 'importCsv'])->name('products.import.csv');
     Route::get('/products/template/csv',   [ProductController::class, 'templateCsv'])->name('products.template.csv');
+    Route::resource('kategoris', \App\Http\Controllers\KategoriController::class);
     Route::resource('products', ProductController::class);
 
     // Transactions — custom routes HARUS sebelum resource

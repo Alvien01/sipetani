@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
 
     // Transactions — custom routes HARUS sebelum resource
     Route::get('/transactions/export/csv',   [TransactionController::class, 'exportCsv'])->name('transactions.export.csv');
+    Route::get('/transactions/export/excel', [TransactionController::class, 'exportExcel'])->name('transactions.export.excel');
     Route::post('/transactions/import/csv',  [TransactionController::class, 'importCsv'])->name('transactions.import.csv');
     Route::get('/transactions/template/csv', [TransactionController::class, 'templateCsv'])->name('transactions.template.csv');
     Route::resource('transactions', TransactionController::class);

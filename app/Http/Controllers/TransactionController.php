@@ -11,6 +11,13 @@ class TransactionController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $year   = $request->input('year');
+
+        // Ambil daftar tahun yang tersedia untuk filter
+        $availableYears = Transaction::selectRaw('YEAR(date_sale) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year');
 
         $transactions = Transaction::select('id', 'product_id', 'date_sale', 'total_buy', 'total_payment')
             ->with(['product' => function ($query) {
@@ -23,11 +30,14 @@ class TransactionController extends Controller
                 ->orWhere('date_sale', 'like', "%{$search}%")
                 ->orWhere('total_payment', 'like', "%{$search}%");
             })
-            ->latest()
+            ->when($year, function ($query, $year) {
+                $query->whereYear('date_sale', $year);
+            })
+            ->latest('date_sale')
             ->paginate(10)
             ->withQueryString();
 
-        return view('transactions.index', compact('transactions'));
+        return view('transactions.index', compact('transactions', 'availableYears'));
     }
 
     public function create()
@@ -79,42 +89,42 @@ class TransactionController extends Controller
             ->with('success', 'Transaksi berhasil dihapus.');
     }
 
-    public function exportCsv()
+    public function exportCsv(Request $request)
     {
-        $transactions = Transaction::select('id', 'product_id', 'date_sale', 'total_buy', 'total_payment')
-            ->with(['product' => function ($query) {
-                $query->select('id', 'product_name');
-            }])
-            ->orderBy('date_sale', 'asc')
-            ->get();
-        $filename = 'transaksi_' . now()->format('Ymd_His') . '.csv';
-        $headers = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            'Pragma'              => 'no-cache',
-            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires'             => '0',
-        ];
+        set_time_limit(0);
+        ini_set('memory_limit', '1024M');
 
-        $callback = function () use ($transactions) {
-            $handle = fopen('php://output', 'w');
-            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
-            fputcsv($handle, ['id', 'product_id', 'product_name', 'date_sale', 'total_buy', 'total_payment']);
-            foreach ($transactions as $t) {
-                fputcsv($handle, [
-                    $t->id,
-                    $t->product_id,
-                    $t->product?->product_name ?? '',
-                    $t->date_sale,
-                    $t->total_buy,
-                    $t->total_payment,
-                ]);
+        $search = $request->input('search');
+        $year   = $request->input('year');
+        $filename = 'transaksi_' . ($year ?: 'semua') . '_' . now()->format('Ymd_His') . '.csv';
+
+        $query = \Illuminate\Support\Facades\DB::table('transactions')
+            ->join('products', 'transactions.product_id', '=', 'products.id')
+            ->select([
+                'transactions.id as ID Transaksi',
+                'products.product_name as Produk',
+                'transactions.date_sale as Tanggal Penjualan',
+                'transactions.total_buy as Jumlah (Qty)',
+                'transactions.total_payment as Total Pembayaran (Rp)'
+            ])
+            ->when($search, function ($query, $search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('products.product_name', 'like', "%{$search}%")
+                      ->orWhere('transactions.date_sale', 'like', "%{$search}%");
+                });
+            })
+            ->when($year, function ($query, $year) {
+                $query->whereYear('transactions.date_sale', $year);
+            })
+            ->orderBy('transactions.date_sale', 'asc');
+
+        $generator = function () use ($query) {
+            foreach ($query->cursor() as $row) {
+                yield $row;
             }
-
-            fclose($handle);
         };
 
-        return response()->stream($callback, 200, $headers);
+        return (new \Rap2hpoutre\FastExcel\FastExcel($generator()))->download($filename);
     }
 
     public function importCsv(Request $request)
@@ -234,5 +244,43 @@ class TransactionController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        set_time_limit(0);
+        ini_set('memory_limit', '1024M');
+
+        $year = $request->input('year');
+        $search = $request->input('search');
+        $filename = 'transaksi_' . ($year ?: 'semua') . '_' . now()->format('Ymd_His') . '.xlsx';
+        
+        $query = \Illuminate\Support\Facades\DB::table('transactions')
+            ->join('products', 'transactions.product_id', '=', 'products.id')
+            ->select([
+                'transactions.id as ID Transaksi',
+                'products.product_name as Produk',
+                'transactions.date_sale as Tanggal Penjualan',
+                'transactions.total_buy as Jumlah (Qty)',
+                'transactions.total_payment as Total Pembayaran (Rp)'
+            ])
+            ->when($search, function ($query, $search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('products.product_name', 'like', "%{$search}%")
+                      ->orWhere('transactions.date_sale', 'like', "%{$search}%");
+                });
+            })
+            ->when($year, function ($query, $year) {
+                $query->whereYear('transactions.date_sale', $year);
+            })
+            ->orderBy('transactions.date_sale', 'asc');
+
+        $generator = function () use ($query) {
+            foreach ($query->cursor() as $row) {
+                yield $row;
+            }
+        };
+
+        return (new \Rap2hpoutre\FastExcel\FastExcel($generator()))->download($filename);
     }
 }

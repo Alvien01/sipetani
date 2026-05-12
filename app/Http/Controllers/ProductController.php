@@ -130,45 +130,52 @@ class ProductController extends Controller
             ->with('success', 'Produk berhasil dihapus.');
     }
 
-    // ─── EXPORT CSV ──────────────────────────────────────────────────
-    public function exportCsv()
+    // ─── EXPORT CSV & EXCEL ──────────────────────────────────────────
+    public function exportCsv(Request $request)
     {
-        $products = Product::orderBy('id')->get();
+        return $this->performExport($request, 'csv');
+    }
 
-        $filename = 'produk_' . now()->format('Ymd_His') . '.csv';
+    public function exportExcel(Request $request)
+    {
+        return $this->performExport($request, 'xlsx');
+    }
 
-        $headers = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            'Pragma'              => 'no-cache',
-            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires'             => '0',
-        ];
+    private function performExport(Request $request, $format)
+    {
+        set_time_limit(0);
+        ini_set('memory_limit', '1024M');
 
-        $callback = function () use ($products) {
-            $handle = fopen('php://output', 'w');
+        $search = $request->input('search');
+        $id_kategori = $request->input('id_kategori');
+        $filename = 'produk_' . now()->format('Ymd_His') . '.' . $format;
 
-            // BOM untuk Excel agar UTF-8 terbaca
-            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+        $query = \Illuminate\Support\Facades\DB::table('products')
+            ->leftJoin('kategoris', 'products.id_kategori', '=', 'kategoris.id')
+            ->select([
+                'products.id as ID',
+                'products.product_name as Nama Produk',
+                'kategoris.name as Kategori',
+                'products.price as Harga',
+                'products.stock as Stok',
+                'products.description as Deskripsi'
+            ])
+            ->when($search, function ($query, $search) {
+                $query->where('products.product_name', 'like', "%{$search}%")
+                      ->orWhere('products.description', 'like', "%{$search}%");
+            })
+            ->when($id_kategori, function ($query, $id_kategori) {
+                $query->where('products.id_kategori', $id_kategori);
+            })
+            ->orderBy('products.id', 'asc');
 
-            // Header row
-            fputcsv($handle, ['id', 'product_name', 'slug', 'price', 'description', 'stock']);
-
-            foreach ($products as $p) {
-                fputcsv($handle, [
-                    $p->id,
-                    $p->product_name,
-                    $p->slug,
-                    $p->price,
-                    $p->description,
-                    $p->stock,
-                ]);
+        $generator = function () use ($query) {
+            foreach ($query->cursor() as $row) {
+                yield $row;
             }
-
-            fclose($handle);
         };
 
-        return response()->stream($callback, 200, $headers);
+        return (new \Rap2hpoutre\FastExcel\FastExcel($generator()))->download($filename);
     }
 
     public function importCsv(Request $request)

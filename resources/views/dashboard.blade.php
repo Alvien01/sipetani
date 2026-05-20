@@ -10,6 +10,7 @@
     {{-- ===== STAT CARDS ===== --}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
+        @if(auth()->user()->role === 'admin')
         {{-- Total Users --}}
         <a href="{{ route('users.index') }}"
             class="group bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md hover:border-green-200 transition-all duration-200">
@@ -25,6 +26,7 @@
                 <p class="text-xs text-green-600 mt-0.5 font-medium">pengguna aktif</p>
             </div>
         </a>
+        @endif
 
         {{-- Total Produk --}}
         <a href="{{ route('products.index') }}"
@@ -70,6 +72,7 @@
             </div>
         </a>
 
+        @if(auth()->user()->role === 'admin')
         {{-- Total Omzet --}}
         <div class="bg-gradient-to-br from-green-700 to-emerald-800 rounded-2xl shadow-sm p-5 flex items-center gap-4">
             <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -88,30 +91,45 @@
                 </p>
             </div>
         </div>
+        @endif
 
     </div>
 
+    @if(auth()->user()->role === 'admin')
     {{-- ===== GRAFIK TRANSAKSI PER BULAN ===== --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
             <div>
                 <h3 class="text-base font-semibold text-gray-800">Grafik Transaksi Bulanan</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Jumlah transaksi & omzet 12 bulan terakhir</p>
+                <p class="text-xs text-gray-500 mt-0.5">Jumlah transaksi & omzet {{ $selectedYear ? 'tahun ' . $selectedYear : '12 bulan terakhir' }}</p>
             </div>
-            {{-- Toggle chart type --}}
+            
+            <div class="flex items-center gap-4">
+                {{-- Year Filter --}}
+                <form action="{{ route('dashboard') }}" method="GET">
+                    <select name="year" onchange="this.form.submit()" class="text-xs font-semibold border-gray-200 rounded-lg text-gray-600 focus:ring-green-500 focus:border-green-500 py-1.5 pl-3 pr-8 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors">
+                        <option value="">12 Bulan Terakhir</option>
+                        @foreach($availableYears as $year)
+                            <option value="{{ $year }}" {{ $selectedYear == $year ? 'selected' : '' }}>Tahun {{ $year }}</option>
+                        @endforeach
+                    </select>
+                </form>
+
+                {{-- Toggle chart type --}}
             <div class="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-                <button id="btnTrx" onclick="switchChart('trx')"
-                    class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white text-green-700 shadow-sm transition-all">
-                    Transaksi
-                </button>
-                <button id="btnOmzet" onclick="switchChart('omzet')"
-                    class="px-3 py-1.5 text-xs font-semibold rounded-lg text-gray-500 hover:text-gray-700 transition-all">
-                    Omzet
-                </button>
-                <button id="btnQty" onclick="switchChart('qty')"
-                    class="px-3 py-1.5 text-xs font-semibold rounded-lg text-gray-500 hover:text-gray-700 transition-all">
-                    Qty Terjual
-                </button>
+                    <button id="btnTrx" onclick="switchChart('trx')"
+                        class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white text-green-700 shadow-sm transition-all">
+                        Transaksi
+                    </button>
+                    <button id="btnOmzet" onclick="switchChart('omzet')"
+                        class="px-3 py-1.5 text-xs font-semibold rounded-lg text-gray-500 hover:text-gray-700 transition-all">
+                        Omzet
+                    </button>
+                    <button id="btnQty" onclick="switchChart('qty')"
+                        class="px-3 py-1.5 text-xs font-semibold rounded-lg text-gray-500 hover:text-gray-700 transition-all">
+                        Qty Terjual
+                    </button>
+                </div>
             </div>
         </div>
         <div class="p-6">
@@ -120,6 +138,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     {{-- ===== ROW: TOP PRODUK + TRANSAKSI TERBARU ===== --}}
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -221,6 +240,7 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-5">
         <h3 class="text-sm font-semibold text-gray-700 mb-3">⚡ Aksi Cepat</h3>
         <div class="flex flex-wrap gap-3">
+            @if(auth()->user()->role === 'admin')
             <a href="{{ route('users.create') }}"
                 class="inline-flex items-center gap-2 px-4 py-2.5 bg-green-700 hover:bg-green-800 text-white text-sm font-medium rounded-xl transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,6 +255,8 @@
                 </svg>
                 Tambah Produk
             </a>
+            @endif
+            
             <a href="{{ route('transactions.create') }}"
                 class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -242,6 +264,8 @@
                 </svg>
                 Tambah Transaksi
             </a>
+
+            @if(auth()->user()->role === 'admin')
             <a href="{{ route('hasil-peramalan.index') }}"
                 class="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-xl transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,6 +282,7 @@
                 </svg>
                 Hasil Analisis
             </a>
+            @endif
         </div>
     </div>
 

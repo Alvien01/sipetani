@@ -265,9 +265,9 @@
                         <td class="px-4 py-3.5 font-semibold text-gray-800">
                             {{ $r->aktual !== null ? number_format($r->aktual, 0, ',', '.') : '-' }}
                         </td>
-                        <td class="px-4 py-3.5 text-gray-600">{{ number_format($r->st, 2, ',', '.') }}</td>
-                        <td class="px-4 py-3.5 text-gray-600">{{ number_format($r->bt, 2, ',', '.') }}</td>
-                        <td class="px-4 py-3.5 text-gray-600">{{ number_format($r->it, 2, ',', '.') }}</td>
+                        <td class="px-4 py-3.5 text-gray-600">{{ $r->aktual !== null ? number_format($r->st, 2, ',', '.') : '-' }}</td>
+                        <td class="px-4 py-3.5 text-gray-600">{{ $r->aktual !== null ? number_format($r->bt, 2, ',', '.') : '-' }}</td>
+                        <td class="px-4 py-3.5 text-gray-600">{{ $r->aktual !== null ? number_format($r->it, 2, ',', '.') : '-' }}</td>
                         <td class="px-4 py-3.5 font-semibold text-blue-700">{{ number_format($r->forecast, 2, ',', '.') }}</td>
                         <td class="px-4 py-3.5 text-gray-500 text-center">{{ $r->alpha }}</td>
                         <td class="px-4 py-3.5 text-gray-500 text-center">{{ $r->beta }}</td>
@@ -390,11 +390,11 @@
 document.addEventListener('DOMContentLoaded', function () {
 
     // ===== CHART =====
-    @if($stats && $results->count())
-    const chartLabels   = @json($results->pluck('periode')->values());
-    const chartAktual   = @json($results->pluck('aktual')->values());
-    const chartForecast = @json($results->pluck('forecast')->values());
-    const chartSt       = @json($results->pluck('st')->values());
+    @if($stats && $chartData->count())
+    const chartLabels   = @json($chartData->pluck('periode')->values());
+    const chartAktual   = @json($chartData->pluck('aktual')->values());
+    const chartForecast = @json($chartData->pluck('forecast')->values());
+    const chartSt       = @json($chartData->pluck('st')->values());
 
     const ctx = document.getElementById('hasilChart');
     if (ctx) {

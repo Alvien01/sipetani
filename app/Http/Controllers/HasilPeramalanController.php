@@ -18,7 +18,7 @@ class HasilPeramalanController extends Controller
             ->with(['product' => function ($q) {
                 $q->select('id', 'product_name');
             }])
-            ->latest();
+            ->orderBy('id', 'asc');
 
         if ($request->filled('product_id')) {
             if ($request->product_id === 'all') {
@@ -34,8 +34,10 @@ class HasilPeramalanController extends Controller
 
         $results = $query->paginate(20)->withQueryString();
         $stats = null;
+        $chartData = null;
         if ($request->filled('product_id')) {
-            $statsQuery = HasilPeramalan::where('tipe_periode', $request->filled('tipe_periode') ? $request->tipe_periode : 'bulanan');
+            $statsQuery = HasilPeramalan::where('tipe_periode', $request->filled('tipe_periode') ? $request->tipe_periode : 'bulanan')
+                ->orderBy('id', 'asc');
             
             if ($request->product_id === 'all') {
                 $statsQuery->whereNull('id_produk');
@@ -44,6 +46,7 @@ class HasilPeramalanController extends Controller
             }
 
             $all = $statsQuery->get();
+            $chartData = $all;
 
             if ($all->isNotEmpty()) {
                 $stats = [
@@ -61,7 +64,7 @@ class HasilPeramalanController extends Controller
             }
         }
 
-        return view('hasil-peramalan.index', compact('results', 'products', 'stats'));
+        return view('hasil-peramalan.index', compact('results', 'products', 'stats', 'chartData'));
     }
 
     public function generate(Request $request)
@@ -223,6 +226,9 @@ class HasilPeramalanController extends Controller
             if ($pe !== null) {
                 $mapeSum += $pe;
                 $mapeCount++;
+                $currentMape = round($mapeSum / $mapeCount, 2);
+            } else {
+                $currentMape = null;
             }
 
             $rows[] = [
@@ -239,7 +245,7 @@ class HasilPeramalanController extends Controller
                 'gamma'        => $gamma,
                 'seasonal_length' => $seasonalLength,
                 'pe'           => $pe !== null ? round($pe, 2) : null,
-                'mape'         => null, 
+                'mape'         => $currentMape, 
             ];
 
             $st_prev = $st;
@@ -280,9 +286,23 @@ class HasilPeramalanController extends Controller
 
         $mapeKumulatif = $mapeCount > 0 ? round($mapeSum / $mapeCount, 2) : null;
 
-        foreach ($rows as &$r) {
-            $r['mape'] = $mapeKumulatif;
-        }
+        // Tambahkan baris forecast untuk periode berikutnya (masa depan)
+        $rows[] = [
+            'id_produk'    => ($productIdInput === 'all') ? null : $productIdInput,
+            'periode'      => $nextPeriodLabel,
+            'tipe_periode' => $tipePeriode,
+            'aktual'       => null,
+            'st'           => 0,
+            'bt'           => 0,
+            'it'           => 0,
+            'forecast'     => $nextForecast,
+            'alpha'        => $alpha,
+            'beta'         => $beta,
+            'gamma'        => $gamma,
+            'seasonal_length' => $seasonalLength,
+            'pe'           => null,
+            'mape'         => null,
+        ];
 
         HasilPeramalan::insert(array_map(function ($r) {
             return array_merge($r, [

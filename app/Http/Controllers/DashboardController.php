@@ -14,9 +14,12 @@ use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        $data = Cache::remember('dashboard_data', 600, function () {
+        $selectedYear = $request->input('year');
+        $cacheKey = 'dashboard_data_' . ($selectedYear ?: 'default');
+
+        $data = Cache::remember($cacheKey, 600, function () use ($selectedYear) {
             $latestTransactionDate = Transaction::max('date_sale');
             $now = $latestTransactionDate ? Carbon::parse($latestTransactionDate) : Carbon::now();
             $startOfThisMonth = $now->copy()->startOfMonth();
@@ -39,38 +42,62 @@ class DashboardController extends Controller
 
             $omzetBulanIni = Transaction::whereBetween('date_sale', [$startOfThisMonth, $now])->sum('total_payment');
 
-            // Optimized Chart Data (leveraging index)
-            $twelveMonthsAgo = $now->copy()->subMonths(11)->startOfMonth();
-            $monthlyData = Transaction::select(
-                    DB::raw('YEAR(date_sale) as year'),
-                    DB::raw('MONTH(date_sale) as month'),
-                    DB::raw('COUNT(*) as total_trx'),
-                    DB::raw('SUM(total_buy) as total_qty'),
-                    DB::raw('SUM(total_payment) as total_omzet')
-                )
-                ->where('date_sale', '>=', $twelveMonthsAgo)
-                ->groupBy('year', 'month')
-                ->orderBy('year')
-                ->orderBy('month')
-                ->get();
+            $availableYears = Transaction::selectRaw('YEAR(date_sale) as year')->distinct()->orderByDesc('year')->pluck('year');
 
             $chartLabels = [];
             $chartTrx    = [];
             $chartOmzet  = [];
             $chartQty    = [];
 
-            for ($i = 11; $i >= 0; $i--) {
-                $date  = $now->copy()->subMonths($i);
-                $y     = (int) $date->year;
-                $m     = (int) $date->month;
-                $label = $date->translatedFormat('M Y');
+            if ($selectedYear) {
+                $monthlyData = Transaction::select(
+                        DB::raw('MONTH(date_sale) as month'),
+                        DB::raw('COUNT(*) as total_trx'),
+                        DB::raw('SUM(total_buy) as total_qty'),
+                        DB::raw('SUM(total_payment) as total_omzet')
+                    )
+                    ->whereYear('date_sale', $selectedYear)
+                    ->groupBy('month')
+                    ->orderBy('month')
+                    ->get();
 
-                $row = $monthlyData->filter(fn($r) => (int)$r->year === $y && (int)$r->month === $m)->first();
+                for ($i = 1; $i <= 12; $i++) {
+                    $date = Carbon::create($selectedYear, $i, 1);
+                    $chartLabels[] = $date->translatedFormat('M Y');
+                    $row = $monthlyData->filter(fn($r) => (int)$r->month === $i)->first();
+                    
+                    $chartTrx[]    = $row ? (int) $row->total_trx   : 0;
+                    $chartOmzet[]  = $row ? (float) $row->total_omzet : 0;
+                    $chartQty[]    = $row ? (int) $row->total_qty    : 0;
+                }
+            } else {
+                $twelveMonthsAgo = $now->copy()->subMonths(11)->startOfMonth();
+                $monthlyData = Transaction::select(
+                        DB::raw('YEAR(date_sale) as year'),
+                        DB::raw('MONTH(date_sale) as month'),
+                        DB::raw('COUNT(*) as total_trx'),
+                        DB::raw('SUM(total_buy) as total_qty'),
+                        DB::raw('SUM(total_payment) as total_omzet')
+                    )
+                    ->where('date_sale', '>=', $twelveMonthsAgo)
+                    ->groupBy('year', 'month')
+                    ->orderBy('year')
+                    ->orderBy('month')
+                    ->get();
 
-                $chartLabels[] = $label;
-                $chartTrx[]    = $row ? (int) $row->total_trx   : 0;
-                $chartOmzet[]  = $row ? (float) $row->total_omzet : 0;
-                $chartQty[]    = $row ? (int) $row->total_qty    : 0;
+                for ($i = 11; $i >= 0; $i--) {
+                    $date  = $now->copy()->subMonths($i);
+                    $y     = (int) $date->year;
+                    $m     = (int) $date->month;
+                    $label = $date->translatedFormat('M Y');
+
+                    $row = $monthlyData->filter(fn($r) => (int)$r->year === $y && (int)$r->month === $m)->first();
+
+                    $chartLabels[] = $label;
+                    $chartTrx[]    = $row ? (int) $row->total_trx   : 0;
+                    $chartOmzet[]  = $row ? (float) $row->total_omzet : 0;
+                    $chartQty[]    = $row ? (int) $row->total_qty    : 0;
+                }
             }
 
             $topProducts = Transaction::select(
@@ -93,7 +120,8 @@ class DashboardController extends Controller
             return compact(
                 'totalUsers', 'totalProducts', 'totalTransactions', 'totalOmzet', 'totalForecast',
                 'trxBulanIni', 'trxBulanLalu', 'trxGrowth', 'omzetBulanIni',
-                'chartLabels', 'chartTrx', 'chartOmzet', 'chartQty', 'topProducts', 'recentTransactions'
+                'chartLabels', 'chartTrx', 'chartOmzet', 'chartQty', 'topProducts', 'recentTransactions',
+                'availableYears', 'selectedYear'
             );
         });
 

@@ -17,7 +17,8 @@ class DashboardController extends Controller
     public function index()
     {
         $data = Cache::remember('dashboard_data', 600, function () {
-            $now = Carbon::now();
+            $latestTransactionDate = Transaction::max('date_sale');
+            $now = $latestTransactionDate ? Carbon::parse($latestTransactionDate) : Carbon::now();
             $startOfThisMonth = $now->copy()->startOfMonth();
             $startOfLastMonth = $now->copy()->subMonth()->startOfMonth();
             $endOfLastMonth   = $now->copy()->subMonth()->endOfMonth();

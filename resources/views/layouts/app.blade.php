@@ -106,6 +106,7 @@
                     Dashboard
                 </a>
 
+                @if(Auth::user()->role === 'admin')
                 <p class="text-green-400 text-xs font-semibold uppercase tracking-wider px-3 mt-5 mb-3">Manajemen</p>
 
                 <a href="{{ route('users.index') }}"
@@ -134,6 +135,7 @@
                     </svg>
                     Produk
                 </a>
+                @endif
 
                 <p class="text-green-400 text-xs font-semibold uppercase tracking-wider px-3 mt-5 mb-3">Analisis & Laporan</p>
 
@@ -146,6 +148,7 @@
                     Transaksi
                 </a>
 
+                @if(Auth::user()->role === 'admin')
                 <a href="{{ route('hasil-peramalan.index') }}"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
                    {{ request()->routeIs('hasil-peramalan.*') ? 'bg-white/20 text-white shadow-sm' : 'text-green-100 hover:bg-white/10 hover:text-white' }}">
@@ -163,6 +166,7 @@
                     </svg>
                     Rekomendasi Stok
                 </a>
+                @endif
             </nav>
 
             <!-- User Info -->
